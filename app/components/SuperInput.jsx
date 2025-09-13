@@ -12,6 +12,7 @@ export default function SuperInput() {
   const setCharacter = useCharacterStore((state) => state.setCharacter);
 
   const handleMessage = async () => {
+  if(user.message);
   try {
     const updatedMessage = [...character.messages, {role: "user", content: user.message}]; 
     // Update UI immediately for better UX

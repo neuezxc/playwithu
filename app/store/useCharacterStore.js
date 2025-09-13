@@ -3,7 +3,7 @@ import { create } from "zustand";
 import usePromptStore from "./usePromptStore";
 const useCharacterStore = create((set) => ({
   character: {
-    name: "hayeon",
+    name: "Hayeon",
     avatarURL: "",
     bio: "streamer",
     description: "hayeon 23, streamer have million views",
@@ -14,8 +14,8 @@ const useCharacterStore = create((set) => ({
         content: usePromptStore.getState().system_prompt,
       },
       {
-        role: "user",
-        content: "Whats your name?",
+        role: "assistant",
+        content: "I'm neko, what i can help you?",
       },
     ],
   },

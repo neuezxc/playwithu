@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware'  // ← Add this
 const useApiSettingStore = create(
   persist(  // ← Wrap with persist
     (set) => ({
-      api_key: "sk-or-...",
+      api_key: "",
       model_id: "openrouter/sonoma-dusk-alpha",
       modal: false,
 

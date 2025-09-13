@@ -1,103 +1,106 @@
-import Image from "next/image";
+'use client'
+import React, { useEffect } from "react";
+import { Settings2, CodeXml, ArrowUp, User } from "lucide-react";
+
+import useApiSettingStore from "./store/useApiSettingStore";
+import ApiSettingsModal from "./components/modal/ApiSettingsModal";
 
 export default function Home() {
+  const { api_key, model_id, modal } = useApiSettingStore();
+  const setApiKey = useApiSettingStore((state) => state.setApiKey);
+  const setModal = useApiSettingStore((state) => state.setModal);
+  const handleMessage = () => {
+    try {
+      fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${api_key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: model_id,
+          messages: [
+            {
+              role: "user",
+              content: "What is the meaning of life?",
+            },
+          ],
+        }),
+      });
+    } catch (err) {}
+  };
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex flex-col items-center w-full h-screen bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
+      {/* Chat Header */}
+      <header className="flex-shrink-0 flex justify-center items-center w-full h-[45px] py-3">
+        <h1 className="text-base font-medium tracking-tight">Character name</h1>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Chat Body */}
+      <main className="flex-1 w-full max-w-2xl px-4 overflow-y-auto">
+        <div className="flex flex-col gap-6 py-6 mx-[50px]">
+          {/* Character's Chat Message */}
+          <div className="flex items-start gap-3">
+            <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0">
+              {/* You can place an <img /> tag here for the character's avatar */}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-base font-medium text-[#E4E4E4]">
+                Character Name:
+              </span>
+              <p className="text-sm font-normal text-[#CDCDCD]">
+                Hey there! The usual today? Or are we feeling adventurous and
+                trying something new?
+              </p>
+            </div>
+          </div>
+
+          {/* User's Chat Message */}
+          <div className="flex justify-end">
+            <div className="bg-[#242524] border border-[#333333] rounded-2xl p-4 max-w-sm">
+              <p className="text-sm font-normal text-[#CDCDCD]">
+                Hmm, maybe something new. What do you recommend that's not too
+                sweet?
+              </p>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Input Area */}
+      <footer className="flex flex-col items-center w-full p-4">
+        <div className="w-full max-w-xl bg-[#212121] border border-[#282828] rounded-2xl p-3 flex flex-col gap-3">
+          <textarea
+            className="w-full bg-transparent text-[#CDCDCD] text-base placeholder:text-[#A2A2A2] resize-none outline-none"
+            placeholder="Enter to send chat + Enter for linebreak."
+            rows={3}
+          ></textarea>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setModal(true)} className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all">
+                <Settings2 size={16} />
+              </button>
+              <button className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all ">
+                <CodeXml size={18} className="" />
+              </button>
+              <button className="flex items-center justify-center px-3 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all">
+                <span className="text-sm font-medium text-[#EEEEEE]">
+                  Characters
+                </span>
+              </button>
+            </div>
+            <button onClick={handleMessage} className="flex items-center justify-center w-8 h-8 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg hover:bg-[#3A9E49]/50 transition-colors">
+              <ArrowUp size={16} className="text-[#D3D3D3]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <p className="mt-2 text-xs font-normal text-[#656565]">
+          This is an AI-generated persona, not a real person.
+        </p>
       </footer>
+      {modal && <ApiSettingsModal />}
     </div>
   );
 }

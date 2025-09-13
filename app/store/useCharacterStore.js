@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import { persist } from 'zustand/middleware'
+import { persist } from "zustand/middleware";
 
-import usePromptStore from "./usePromptStore";
 
 const useCharacterStore = create(
   persist(
@@ -12,16 +11,8 @@ const useCharacterStore = create(
         bio: "streamer",
         description: "hayeon 23, streamer have million views",
         scenario: "living together with user",
-        messages: [
-          {
-            role: "system",
-            content: usePromptStore.getState().system_prompt,
-          },
-          {
-            role: "assistant",
-            content: "I'm neko, what i can help you? <test>",
-          },
-        ],
+        firstMessage: "YOOOOO?",
+        messages: [],
       },
       setCharacter: (character) => set({ character: character }),
     }),

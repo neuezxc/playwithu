@@ -3,8 +3,6 @@ import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
 
-import { resetCommand } from "../utils/commandHandler";
-
 export default function SuperInput() {
   const { api_key, model_id } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
@@ -15,11 +13,19 @@ export default function SuperInput() {
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
-
-    //Slash Command
     if (user.message.startsWith("/")) {
-      resetCommand(user, character, setUser, setCharacter);
-      return
+      const command = user.message.trim().toLowerCase();
+      if (command === "/reset") {
+        const resetMessages = character.messages
+          .slice(0, 2)
+          .filter((msg) => msg.role === "system" || msg.role === "assistant");
+
+        setCharacter({ ...character, messages: resetMessages });
+        setUser({ ...user, message: "" });
+        console.log("Conversation reset");
+      }
+
+      return;
     }
 
     try {

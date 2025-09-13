@@ -48,8 +48,9 @@ function ChatList() {
 function CharacterChat({ text, character }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0">
+      <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center">
         {/* You can place an <img /> tag here for the character's avatar */}
+        {character.avatarURL?<img src={character.avatarURL} className="object-cover w-full h-full"/> : null}
       </div>
       <div className="flex flex-col gap-1.5">
         <span className="text-base font-medium text-[#E4E4E4]">

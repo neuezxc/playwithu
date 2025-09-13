@@ -12,6 +12,8 @@ export default function ApiSettingsModal() {
   const setApiKey = useApiSettingStore((state) => state.setApiKey);
   const setModelId = useApiSettingStore((state) => state.setModelId);
 
+
+
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">

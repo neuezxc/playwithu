@@ -3,6 +3,8 @@ import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
 
+import { resetCommand } from "../utils/commandHandler";
+
 export default function SuperInput() {
   const { api_key, model_id } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
@@ -12,55 +14,65 @@ export default function SuperInput() {
   const setCharacter = useCharacterStore((state) => state.setCharacter);
 
   const handleMessage = async () => {
-  if(user.message);
-  try {
-    const updatedMessage = [...character.messages, {role: "user", content: user.message}]; 
-    // Update UI immediately for better UX
-    setCharacter({ ...character, messages: updatedMessage });
-    setUser({ ...user, message: "" });
+    if (!user.message.trim()) return;
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${api_key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: model_id,
-          messages: updatedMessage, // Use the updated messages array
-        }),
-      }
-    );
-
-    const data = await response.json();
-    
-    // Error handling for API response
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'API request failed');
-    }
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('No choices returned from API');
+    //Slash Command
+    if (user.message.startsWith("/")) {
+      resetCommand(user, character, setUser, setCharacter);
+      return
     }
 
-    const text = data.choices[0].message.content;
-    
-    setCharacter({
-      ...character,
-      messages: [
-        ...updatedMessage, // Use the updatedMessage array that includes user message
+    try {
+      const updatedMessage = [
+        ...character.messages,
+        { role: "user", content: user.message },
+      ];
+      // Update UI immediately for better UX
+      setCharacter({ ...character, messages: updatedMessage });
+      setUser({ ...user, message: "" });
+
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
         {
-          role: "assistant",
-          content: text,
-        },
-      ],
-    });
-  } catch (error) {
-    console.error("Error sending message:", error.message);
-    // You might want to revert the user message or show an error to the user
-  }
-};
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${api_key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: model_id,
+            messages: updatedMessage, // Use the updated messages array
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      // Error handling for API response
+      if (!response.ok) {
+        throw new Error(data.error?.message || "API request failed");
+      }
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error("No choices returned from API");
+      }
+
+      const text = data.choices[0].message.content;
+
+      setCharacter({
+        ...character,
+        messages: [
+          ...updatedMessage, // Use the updatedMessage array that includes user message
+          {
+            role: "assistant",
+            content: text,
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Error sending message:", error.message);
+      // You might want to revert the user message or show an error to the user
+    }
+  };
 
   //Textarea
   const handleInput = (e) => {

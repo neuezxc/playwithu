@@ -1,10 +1,12 @@
-import React from "react";
-import { Settings2, CodeXml, ArrowUp} from "lucide-react";
+import React, { use } from "react";
+import { Settings2, CodeXml, ArrowUp } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
+import useCharacterStore from "../store/useCharacterStore";
 
 function SuperInput() {
   const { api_key, model_id } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
+  const { character } = useCharacterStore();
 
   const handleMessage = async () => {
     try {
@@ -18,12 +20,7 @@ function SuperInput() {
           },
           body: JSON.stringify({
             model: model_id,
-            messages: [
-              {
-                role: "user",
-                content: "What is the meaning of life?",
-              },
-            ],
+            messages: character.messages,
           }),
         }
       );

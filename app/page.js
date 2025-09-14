@@ -37,7 +37,7 @@ export default function Home() {
   }, [character.messages]);
 
   return (
-    <div className="flex flex-col items-center w-full h-screen bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
+    <div className="flex flex-col items-center w-full h-[100dvh] bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
       {/* Chat Header */}
       <header className="flex-shrink-0 flex justify-center items-center w-full h-[45px] py-10">
         <h1 className="text-base font-medium tracking-tight flex flex-col items-center">

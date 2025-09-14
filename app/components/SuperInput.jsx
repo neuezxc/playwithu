@@ -95,8 +95,8 @@ export default function SuperInput() {
   };
 
   return (
-    <footer className="flex flex-col items-center w-full p-4">
-      <div className="w-full max-w-xl bg-[#212121] border border-[#282828] rounded-2xl p-3 flex flex-col gap-3">
+    <footer className="flex flex-col items-center w-full lg:p-4">
+      <div className="w-full max-w-xl bg-[#212121] border border-[#282828] lg:rounded-2xl rounded-t-2xl p-3 flex flex-col gap-3">
         <textarea
           className="w-full bg-transparent text-[#CDCDCD] text-base placeholder:text-[#A2A2A2] resize-none outline-none"
           placeholder="Enter to send chat + Enter for linebreak."
@@ -138,7 +138,7 @@ export default function SuperInput() {
       </div>
 
       {/* Disclaimer */}
-      <p className="mt-2 text-xs font-normal text-[#656565]">
+      <p className="mt-2 text-xs font-normal text-[#656565] hidden">
         This is an AI-generated persona, not a real person.
       </p>
     </footer>

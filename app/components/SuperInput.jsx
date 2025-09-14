@@ -14,7 +14,7 @@ export default function SuperInput() {
   const setCharacter = useCharacterStore((state) => state.setCharacter);
   const resetMessage = useCharacterStore((state) => state.resetMessage);
   const setSummarizeText = useMemoryStore((state) => state.setSummarizeText);
-
+  const setActive = useMemoryStore((state) => state.setActive);
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
@@ -23,6 +23,7 @@ export default function SuperInput() {
       if (command === "/reset") {
         resetMessage();
         setSummarizeText("");
+        setActive(false);
         setUser({ ...user, message: "" });
         console.log("Conversation reset");
       }

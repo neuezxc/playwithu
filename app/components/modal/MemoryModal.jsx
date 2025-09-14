@@ -17,6 +17,8 @@ export default function MemoryModal() {
     (state) => state.updateSystemPrompt
   );
   const { system_prompt } = usePromptStore();
+  const { active } = useMemoryStore();
+  const setActive = useMemoryStore((state) => state.setActive);
 
 
   const handleSummarize = async () => {
@@ -58,7 +60,9 @@ export default function MemoryModal() {
   };
 
   const handleSave = () => {
+    if(!summarizeText) return;
     updateSystemPrompt(system_prompt.replace("{{memory}}", summarizeText));
+    setActive(true);
     setModal(false);
   };
   return (
@@ -92,8 +96,8 @@ export default function MemoryModal() {
               it automatically summarize the chats every 10 messages count.
             </p>
             <textarea
-              className="w-full h-48 bg-[#161616] rounded-md p-4 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
-              placeholder="Start writing..."
+              className="w-full h-48 bg-[#5fdb72]/10  border border-[#5fdb72] rounded-md p-4 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none  transition-shadow resize-none"
+              placeholder=""
               value={summarizeText}
               readOnly
             />
@@ -111,7 +115,7 @@ export default function MemoryModal() {
               Auto Summarize
             </button>
             <button
-              className="flex items-center justify-center h-full"
+              className="flex items-center justify-center h-full hidden"
               aria-label="Edit preview mode"
             >
               <Pencil size={16} className="text-[#9F9F9F]" />
@@ -120,19 +124,31 @@ export default function MemoryModal() {
         </main>
 
         {/* Modal Footer */}
-        <footer className="flex justify-end items-center gap-4 p-6 border-t border-[#3c3c3c]">
-          <button
-            onClick={() => setModal(false)}
-            className="px-4 py-2 text-sm font-medium text-[#e4ffe8] hover:bg-white/5 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-5 py-2 bg-[#5fdb72]/15 border border-[#5fdb72] rounded-lg text-[#e4ffe8] text-sm font-medium hover:bg-[#5fdb72]/25 transition-colors"
-          >
-            Save
-          </button>
+        <footer className="flex flex-row justify-between items-center gap-4 p-6 border-t border-[#3c3c3c]">
+          {active ? (
+            <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-1 px-3 text-[0.7em] rounded-full">
+              Currently active
+            </div>
+          ) : (
+            <div className="bg-yellow-600/10 border border-yellow-600 text-yellow-200 p-1 px-3 text-[0.7em] rounded-full">
+              Not loaded please save.
+            </div>
+          )}
+
+          <div className="flex flex-row gap-2">
+            <button
+              onClick={() => setModal(false)}
+              className="px-4 py-2 text-sm font-medium text-white/80 bg-[#454545]/30 border border-[#454545] hover:bg-white/10 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-5 py-2 bg-[#5fdb72]/15 border border-[#5fdb72] rounded-lg text-[#e4ffe8] text-sm font-medium hover:bg-[#5fdb72]/25 transition-colors"
+            >
+              Save
+            </button>
+          </div>
         </footer>
       </div>
     </div>

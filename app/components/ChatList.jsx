@@ -46,11 +46,30 @@ function ChatList() {
 }
 
 function CharacterChat({ text, character }) {
+  // Process the text to apply styling
+  const processText = (inputText) => {
+    if (!inputText) return "";
+    // Replace "text" with span having primary color
+    let processed = inputText.replace(
+      /"(.*?)"/g,
+      '<span style="font-weight: bold;">$1</span>'
+    );
+
+    return processed;
+  };
+
+  const processedText = processText(text);
+
   return (
     <div className="flex items-start gap-3">
       <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center">
         {/* You can place an <img /> tag here for the character's avatar */}
-        {character.avatarURL?<img src={character.avatarURL} className="object-cover w-full h-full"/> : null}
+        {character.avatarURL ? (
+          <img
+            src={character.avatarURL}
+            className="object-cover w-full h-full"
+          />
+        ) : null}
       </div>
       <div className="flex flex-col gap-1.5">
         <span className="text-base font-medium text-[#E4E4E4]">
@@ -58,17 +77,33 @@ function CharacterChat({ text, character }) {
         </span>
         <p
           className="text-sm font-normal text-[#CDCDCD] flex flex-col gap-4"
-          dangerouslySetInnerHTML={{ __html: text }}
+          dangerouslySetInnerHTML={{ __html: processedText }}
         />
       </div>
     </div>
   );
 }
 function UserChat({ text }) {
+  const processText = (inputText) => {
+    if (!inputText) return "";
+    // Replace "text" with span having primary color
+    let processed = inputText.replace(
+      /"(.*?)"/g,
+      '<span style="font-weight: bold;">$1</span>'
+    );
+
+    return processed;
+  };
+
+  const processedText = processText(text);
+
   return (
     <div className="flex justify-end">
       <div className="bg-[#242524] border border-[#333333] rounded-2xl p-4 max-w-sm">
-        <p className="text-sm font-normal text-[#CDCDCD]">{text}</p>
+        <p
+          className="text-sm font-normal text-[#CDCDCD]"
+          dangerouslySetInnerHTML={{ __html: processedText }}
+        />
       </div>
     </div>
   );

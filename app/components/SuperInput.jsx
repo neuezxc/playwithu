@@ -2,7 +2,7 @@ import { Settings2, CodeXml, ArrowUp } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
-
+import { useRouter } from 'next/navigation';
 export default function SuperInput() {
   const { api_key, model_id } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
@@ -10,6 +10,7 @@ export default function SuperInput() {
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
   const setCharacter = useCharacterStore((state) => state.setCharacter);
+  const router = useRouter();
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
@@ -112,6 +113,14 @@ export default function SuperInput() {
             </button>
             <button className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all ">
               <CodeXml size={18} className="" />
+            </button>
+            <button
+              onClick={() => {
+                router.push("/summarizepage");
+              }}
+              className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all "
+            >
+              S
             </button>
             <button className="flex items-center justify-center px-3 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all">
               <span className="text-sm font-medium text-[#EEEEEE]">

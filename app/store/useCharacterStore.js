@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
+import usePromptStore from "./usePromptStore";
 
 const useCharacterStore = create(
   persist(
@@ -14,13 +14,41 @@ const useCharacterStore = create(
         firstMessage: "YOOOOO?",
         messages: [],
       },
+      isInitialized: false,
+      initializeMessage: () => {
+        if (get().isInitialized) return;
+        const currentFirstMessage = get().character.firstMessage;
+        const newMessages = [
+          {
+            role: "system",
+            content: usePromptStore.getState().system_prompt,
+          },
+          {
+            role: "assistant",
+            content: currentFirstMessage,
+          },
+        ];
+        set((state) => ({
+          character: {
+            ...state.character,
+            messages: newMessages,
+          },
+          isInitialized: true,
+        }));
+      },
       setCharacter: (character) => set({ character: character }),
+      // In useCharacterStore
+      setFirstMessage: (newMessage) => {
+        set((state) => ({
+          character: {
+            ...state.character,
+            firstMessage: newMessage,
+          },
+        }));
+      },
     }),
     {
-      name: "character-storage", // unique name for the storage
-      // You can add other options like:
-      // storage: localStorage, // (default) or sessionStorage
-      // partialize: (state) => ({ character: state.character }), // to persist only specific parts
+      name: "character-storage",
     }
   )
 );

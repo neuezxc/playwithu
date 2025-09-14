@@ -3,8 +3,8 @@ import { persist } from "zustand/middleware";
 
 const useChatStore = create(
   persist((set) => ({
-    summarizeText: "asdasdasd",
-    setSummarizeText: (text) => set({ summarizeText: text }),
+    messageCount: 0,
+    setMessageCount: (count) => set({ messageCount: count }),
   })),
   {
     name: "chat-storage",

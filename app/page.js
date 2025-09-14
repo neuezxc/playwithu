@@ -7,64 +7,34 @@ import SuperInput from "./components/SuperInput";
 import ChatList from "./components/ChatList";
 import useCharacterStore from "./store/useCharacterStore";
 import useChatStore from "./store/useChatStore";
-import { formatChatForSummarize } from "./utils/formatChatForSummarize";
+import MemoryModal from "./components/modal/MemoryModal";
+import useMemoryStore from "./store/useMemoryStore";
+import usePromptStore from "./store/usePromptStore";
 
 export default function Home() {
-  const { modal } = useApiSettingStore();
+  const isApiSettingsModalOpen = useApiSettingStore((state) => state.modal);
+  const isMemoryModalOpen = useMemoryStore((state) => state.modal);
   const { character } = useCharacterStore();
+  const summarizeText = useMemoryStore((state) => state.summarizeText);
   const initializeMessage = useCharacterStore(
     (state) => state.initializeMessage
   );
-  const { api_key, model_id } = useApiSettingStore();
-  const setSummarizeText = useChatStore((state) => state.setSummarizeText);
-
-  useEffect(() => {
-    if (character.messages.length % 6 === 0 && character.messages.length > 0) {
-      console.log(character.messages.length);
-      console.log(formatChatForSummarize(character.messages));
-      autoSummarize();
-    }
-  }, [character.messages]);
-
-  const autoSummarize = async () => {
-    try {
-      const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${api_key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: model_id,
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a concise and immersive summarization engine for a dynamic roleplay chat. Your sole purpose is to silently observe the narrative and provide a brief, third-person summary of the events.",
-              },
-              {
-                role: "user",
-                content: formatChatForSummarize(character.messages),
-              },
-            ],
-          }),
-        }
-      );
-      const data = await response.json();
-      const text = data.choices[0].message.content;
-      setSummarizeText(text);
-      console.log(text);
-    } catch (error) {
-      console.error("Error sending message:", error.message);
-      // You might want to revert the user message or show an error to the user
-    }
-  };
+  const setMessageCount = useChatStore((state) => state.setMessageCount);
+  const { messageCount } = useChatStore();
+  const updateSystemPrompt = useCharacterStore(
+    (state) => state.updateSystemPrompt
+  );
+  const { system_prompt } = usePromptStore();
 
   useEffect(() => {
     initializeMessage();
+    console.log(character.messages);
   }, [initializeMessage]);
+  useEffect(() => {
+    console.log(character.messages);
+    setMessageCount(character.messages.length);
+    console.log(messageCount);
+  }, [character.messages]);
 
   return (
     <div className="flex flex-col items-center w-full h-screen bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
@@ -82,7 +52,8 @@ export default function Home() {
       <ChatList />
       {/* Input Area */}
       <SuperInput />
-      {modal && <ApiSettingsModal />}
+      {isMemoryModalOpen && <MemoryModal />}
+      {isApiSettingsModalOpen && <ApiSettingsModal />}
     </div>
   );
 }

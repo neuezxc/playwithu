@@ -1,27 +1,28 @@
-import { Settings2, CodeXml, ArrowUp } from "lucide-react";
+import { Settings2, CodeXml, ArrowUp, Brain } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
-import { useRouter } from 'next/navigation';
+import useMemoryStore from "../store/useMemoryStore";
+
 export default function SuperInput() {
   const { api_key, model_id } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
+  const setModalMemory = useMemoryStore((state) => state.setModal);
   const { character } = useCharacterStore();
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
   const setCharacter = useCharacterStore((state) => state.setCharacter);
-  const router = useRouter();
+  const resetMessage = useCharacterStore((state) => state.resetMessage);
+  const setSummarizeText = useMemoryStore((state) => state.setSummarizeText);
+
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
     if (user.message.startsWith("/")) {
       const command = user.message.trim().toLowerCase();
       if (command === "/reset") {
-        const resetMessages = character.messages
-          .slice(0, 2)
-          .filter((msg) => msg.role === "system" || msg.role === "assistant");
-
-        setCharacter({ ...character, messages: resetMessages });
+        resetMessage();
+        setSummarizeText("");
         setUser({ ...user, message: "" });
         console.log("Conversation reset");
       }
@@ -115,12 +116,10 @@ export default function SuperInput() {
               <CodeXml size={18} className="" />
             </button>
             <button
-              onClick={() => {
-                router.push("/summarizepage");
-              }}
+              onClick={() => setModalMemory(true)}
               className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all "
             >
-              S
+              <Brain size={18} />
             </button>
             <button className="flex items-center justify-center px-3 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all">
               <span className="text-sm font-medium text-[#EEEEEE]">

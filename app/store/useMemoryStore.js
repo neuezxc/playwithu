@@ -5,7 +5,7 @@ const useMemoryStore = create(
   persist(
     (set) => ({
       summarizeText: "",
-      prompts: "Concisely summarize the current scene, characters, and immediate objective to maintain context. response in description not in markdown formatting style.",
+      prompts: "Condense key details into one line: who, what, when, where, why — keep it vivid, emotional, and true to character voice for immersive roleplay recall.",
       modal: false,
       active: false,
       setSummarizeText: (text) => set({ summarizeText: text }),

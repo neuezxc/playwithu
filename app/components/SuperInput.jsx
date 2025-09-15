@@ -11,10 +11,11 @@ export default function SuperInput() {
   const { character } = useCharacterStore();
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
-  const setCharacter = useCharacterStore((state) => state.setCharacter);
+ const setCharacter = useCharacterStore((state) => state.setCharacter);
   const resetMessage = useCharacterStore((state) => state.resetMessage);
   const setSummarizeText = useMemoryStore((state) => state.setSummarizeText);
   const setActive = useMemoryStore((state) => state.setActive);
+  const setLoading = useCharacterStore((state) => state.setLoading);
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
@@ -39,6 +40,9 @@ export default function SuperInput() {
       // Update UI immediately for better UX
       setCharacter({ ...character, messages: updatedMessage });
       setUser({ ...user, message: "" });
+      
+      // Set loading state
+      setLoading(true);
 
       const response = await fetch(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -80,6 +84,9 @@ export default function SuperInput() {
     } catch (error) {
       console.error("Error sending message:", error.message);
       // You might want to revert the user message or show an error to the user
+    } finally {
+      // Reset loading state
+      setLoading(false);
     }
   };
 

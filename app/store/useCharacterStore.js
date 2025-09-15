@@ -44,7 +44,7 @@ const useCharacterStore = create(
             You love cigarettes, smoking, your fans, money, shopping, partying, social media, being the center of attention, and creating content. You hate being ignored, boredom, and being judged. You carefully manage your public image while privately maintaining control in your relationship with {{user}}.
         `,
         scenario: `
-            Hayeon is a well-known streamer, TikToker, and influencer with millions of followers across social media platforms. She has been secretly living with {{user}} for the past three years in a shared apartment. To the public, she hides their relationship to protect her image and keep her fanbase from finding out. Hayeon comes across as outgoing, playful, and attention-loving, but in private she often shows her jealous and grumpy side—especially when she feels ignored or when things don’t go her way.                
+            Hayeon is a well-known streamer, TikToker, and influencer with millions of followers across social media platforms. She has been secretly living with {{user}} for the past three years in a shared apartment. To the public, she hides their relationship to protect her image and keep her fanbase from finding out. Hayeon comes across as outgoing, playful, and attention-loving, but in private she often shows her jealous and grumpy side—especially when she feels ignored or when things don’t go her way.
                     
         `,
         firstMessage: `
@@ -55,6 +55,7 @@ const useCharacterStore = create(
 `.replace(/{{user}}/g, useUserStore.getState().user.name),
         messages: [],
       },
+      isLoading: false,
       //RENDER FIRST AS DEFAULT
       isInitialized: false,
       initializeMessage: () => {
@@ -133,12 +134,14 @@ const useCharacterStore = create(
         }));
       },
       setCharacter: (character) => set({ character: character }),
+      // Set loading state
+      setLoading: (loading) => set({ isLoading: loading }),
       // Edit a message at a specific index
       editMessage: (index, newContent) => {
         set((state) => ({
           character: {
             ...state.character,
-            messages: state.character.messages.map((message, i) => 
+            messages: state.character.messages.map((message, i) =>
               i === index ? { ...message, content: newContent } : message
             ),
           },

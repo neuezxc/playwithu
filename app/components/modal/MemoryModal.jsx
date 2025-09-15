@@ -127,11 +127,11 @@ export default function MemoryModal() {
         <footer className="flex flex-row justify-between items-center gap-4 p-6 border-t border-[#3c3c3c]">
           {active ? (
             <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-1 px-3 text-[0.7em] rounded-full">
-              Currently active
+              active
             </div>
           ) : (
             <div className="bg-yellow-600/10 border border-yellow-600 text-yellow-200 p-1 px-3 text-[0.7em] rounded-full">
-              Not loaded please save.
+              Not loaded.
             </div>
           )}
 

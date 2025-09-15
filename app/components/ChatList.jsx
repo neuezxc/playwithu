@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import useCharacterStore from "../store/useCharacterStore";
 import { useRef, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Loader2 } from "lucide-react";
 
 function ChatList() {
-  const { character, editMessage, deleteMessage } = useCharacterStore();
+  const { character, editMessage, deleteMessage, isLoading } = useCharacterStore();
   const messages = character.messages;
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState("");
@@ -137,6 +137,29 @@ function ChatList() {
             );
           }
         })}
+        {isLoading && (
+          <div className="flex items-start gap-3">
+            <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center">
+              {character.avatarURL ? (
+                <img
+                  src={character.avatarURL}
+                  className="object-cover w-full h-full"
+                />
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-medium text-[#E4E4E4]">
+                  {character.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-[#3A9E49] animate-spin" />
+                <span className="text-sm text-[#CDCDCD]">Thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
     </main>

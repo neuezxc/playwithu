@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { Edit, Trash2, Loader2 } from "lucide-react";
 
 function ChatList() {
-  const { character, editMessage, deleteMessage, isLoading } = useCharacterStore();
+  const { character, editMessage, deleteMessage, isLoading, editUserMessageAndRegenerate } = useCharacterStore();
   const messages = character.messages;
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState("");
@@ -59,7 +59,15 @@ function ChatList() {
   };
 
   const handleSaveEdit = (id) => {
-    editMessage(id, editContent);
+    // Check if the message being edited is a user message or character message
+    const message = messages[id];
+    if (message.role === "user") {
+      // For user messages, edit and regenerate character response
+      editUserMessageAndRegenerate(id, editContent);
+    } else {
+      // For character messages, just edit the message
+      editMessage(id, editContent);
+    }
     setEditingMessageId(null);
     setEditContent("");
   };

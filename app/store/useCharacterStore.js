@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import usePromptStore from "./usePromptStore";
 import useUserStore from "./useUserStore";
+import useApiSettingStore from "./useApiSettingStore";
 
 const replacerTemplate = (template, character, user) => {
   const replacements = {
@@ -146,6 +147,85 @@ const useCharacterStore = create(
             ),
           },
         }));
+      },
+      // Edit a user message and regenerate the character's response
+      editUserMessageAndRegenerate: async (index, newContent) => {
+        // Get required stores
+        const { api_key, model_id } = useApiSettingStore.getState();
+        const { setLoading } = get();
+        
+        // Update the user message
+        set((state) => ({
+          character: {
+            ...state.character,
+            messages: state.character.messages.map((message, i) =>
+              i === index ? { ...message, content: newContent } : message
+            ),
+          },
+        }));
+        
+        // Remove all messages after the edited user message
+        set((state) => ({
+          character: {
+            ...state.character,
+            messages: state.character.messages.slice(0, index + 1),
+          },
+        }));
+        
+        // Set loading state
+        setLoading(true);
+        
+        try {
+          // Get the current messages (up to and including the edited user message)
+          const currentMessages = get().character.messages;
+          
+          // Make API call to regenerate the character's response
+          const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${api_key}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: model_id,
+                messages: currentMessages,
+              }),
+            }
+          );
+          
+          const data = await response.json();
+          
+          // Error handling for API response
+          if (!response.ok) {
+            throw new Error(data.error?.message || "API request failed");
+          }
+          if (!data.choices || data.choices.length === 0) {
+            throw new Error("No choices returned from API");
+          }
+          
+          const text = data.choices[0].message.content;
+          
+          // Add the character's new response
+          set((state) => ({
+            character: {
+              ...state.character,
+              messages: [
+                ...state.character.messages,
+                {
+                  role: "assistant",
+                  content: text,
+                },
+              ],
+            },
+          }));
+        } catch (error) {
+          console.error("Error regenerating character response:", error.message);
+        } finally {
+          // Reset loading state
+          setLoading(false);
+        }
       },
       // Delete a message at a specific index
       deleteMessage: (index) => {

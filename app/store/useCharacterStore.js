@@ -57,6 +57,7 @@ const useCharacterStore = create(
         messages: [],
       },
       isLoading: false,
+      isCharacterModalOpen: false,
       //RENDER FIRST AS DEFAULT
       isInitialized: false,
       initializeMessage: () => {
@@ -137,6 +138,8 @@ const useCharacterStore = create(
       setCharacter: (character) => set({ character: character }),
       // Set loading state
       setLoading: (loading) => set({ isLoading: loading }),
+      // Character modal state
+      setCharacterModal: (isOpen) => set({ isCharacterModalOpen: isOpen }),
       // Edit a message at a specific index
       editMessage: (index, newContent) => {
         set((state) => ({

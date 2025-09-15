@@ -1,14 +1,16 @@
-import { Settings2, CodeXml, ArrowUp, Brain } from "lucide-react";
+import { Settings2, CodeXml, ArrowUp, Brain, User } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
 import useMemoryStore from "../store/useMemoryStore";
+import CharacterModal from "./modal/CharacterModal";
 
 export default function SuperInput() {
-  const { api_key, model_id } = useApiSettingStore();
+ const { api_key, model_id } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
   const setModalMemory = useMemoryStore((state) => state.setModal);
-  const { character } = useCharacterStore();
+  const { character, isCharacterModalOpen } = useCharacterStore();
+  const setCharacterModal = useCharacterStore((state) => state.setCharacterModal);
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
  const setCharacter = useCharacterStore((state) => state.setCharacter);
@@ -129,7 +131,10 @@ export default function SuperInput() {
             >
               <Brain size={18} />
             </button>
-            <button className="flex items-center justify-center px-3 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all">
+            <button 
+              onClick={() => setCharacterModal(true)}
+              className="flex items-center justify-center px-3 h-8 bg-white/10 border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+            >
               <span className="text-sm font-medium text-[#EEEEEE]">
                 Characters
               </span>
@@ -143,6 +148,9 @@ export default function SuperInput() {
           </button>
         </div>
       </div>
+
+      {/* Character Modal */}
+      {isCharacterModalOpen && <CharacterModal />}
 
       {/* Disclaimer */}
       <p className="mt-2 text-xs font-normal text-[#656565] hidden">

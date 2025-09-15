@@ -54,6 +54,7 @@ const useCharacterStore = create(
 
 "Hey, babe," she said with a playful smile, "what are you up to?"
 `.replace(/{{user}}/g, useUserStore.getState().user.name),
+        galleryImages: [],
         messages: [],
       },
       isLoading: false,
@@ -242,6 +243,24 @@ const useCharacterStore = create(
           character: {
             ...state.character,
             messages: state.character.messages.filter((_, i) => i !== index),
+          },
+        }));
+      },
+      // Add image to gallery
+      addGalleryImage: (imageUrl) => {
+        set((state) => ({
+          character: {
+            ...state.character,
+            galleryImages: [...(state.character.galleryImages || []), imageUrl],
+          },
+        }));
+      },
+      // Remove image from gallery
+      removeGalleryImage: (index) => {
+        set((state) => ({
+          character: {
+            ...state.character,
+            galleryImages: (state.character.galleryImages || []).filter((_, i) => i !== index),
           },
         }));
       },

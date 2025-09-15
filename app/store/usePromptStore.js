@@ -21,7 +21,7 @@ const usePromptStore = create(
       </Scenario>
       <Memory>
         {{memory}}
-      <Memory>
+      </Memory>
     </Characters>
 
     [Roleplay Methodology]:

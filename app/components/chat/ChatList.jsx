@@ -1,7 +1,11 @@
+"use client";
+
 import React, { useState } from "react";
-import useCharacterStore from "../store/useCharacterStore";
+import useCharacterStore from "../../store/useCharacterStore";
 import { useRef, useEffect } from "react";
-import { Edit, Trash2, Loader2 } from "lucide-react";
+import { Edit, Trash2, Loader2, Grid } from "lucide-react";
+import CharacterImagePopup from "./CharacterImagePopup";
+import ImageGalleryModal from "./ImageGalleryModal";
 
 function ChatList() {
   const { character, editMessage, deleteMessage, isLoading, editUserMessageAndRegenerate } = useCharacterStore();

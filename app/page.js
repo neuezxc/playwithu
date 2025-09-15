@@ -1,15 +1,14 @@
-"use client";
+'use client'
 import React, { useEffect } from "react";
 
 import useApiSettingStore from "./store/useApiSettingStore";
-import ApiSettingsModal from "./components/modal/ApiSettingsModal";
-import SuperInput from "./components/SuperInput";
-import ChatList from "./components/ChatList";
 import useCharacterStore from "./store/useCharacterStore";
 import useChatStore from "./store/useChatStore";
-import MemoryModal from "./components/modal/MemoryModal";
 import useMemoryStore from "./store/useMemoryStore";
 import usePromptStore from "./store/usePromptStore";
+import { CharacterProfile, ChatList } from "./components";
+import { SuperInput } from "./components";
+import { ApiSettingsModal, MemoryModal } from "./components";
 
 export default function Home() {
   const isApiSettingsModalOpen = useApiSettingStore((state) => state.modal);
@@ -38,15 +37,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center w-full h-[100dvh] bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
-      {/* Chat Header */}
-      <header className="flex-shrink-0 flex justify-center items-center w-full h-[45px] py-10">
-        <h1 className="text-base font-medium tracking-tight flex flex-col items-center">
-          {character.name}
-          <span className="text-sm font-normal opacity-40">
-            {character.bio}
-          </span>
-        </h1>
-      </header>
+      {/* Character Profile */}
+      <CharacterProfile character={character} />
 
       {/* Chat Body */}
       <ChatList />

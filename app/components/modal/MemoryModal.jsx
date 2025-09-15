@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from "react";
 import { X, CodeXml, Pencil, Brain } from "lucide-react";
 

@@ -133,6 +133,32 @@ const useCharacterStore = create(
         }));
       },
       setCharacter: (character) => set({ character: character }),
+      // Edit a message at a specific index
+      editMessage: (index, newContent) => {
+        set((state) => ({
+          character: {
+            ...state.character,
+            messages: state.character.messages.map((message, i) => 
+              i === index ? { ...message, content: newContent } : message
+            ),
+          },
+        }));
+      },
+      // Delete a message at a specific index
+      deleteMessage: (index) => {
+        // Prevent deletion of system messages
+        if (index === 0 && get().character.messages[0].role === "system") {
+          console.warn("Cannot delete system message");
+          return;
+        }
+        
+        set((state) => ({
+          character: {
+            ...state.character,
+            messages: state.character.messages.filter((_, i) => i !== index),
+          },
+        }));
+      },
     }),
     {
       name: "character-storage",

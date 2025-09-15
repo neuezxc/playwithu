@@ -9,6 +9,22 @@ function ChatList() {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [deletingMessageId, setDeletingMessageId] = useState(null);
+ // Find indices of the most recent user and assistant messages
+  let lastUserMessageIndex = -1;
+  let lastAssistantMessageIndex = -1;
+  
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === "user" && lastUserMessageIndex === -1) {
+      lastUserMessageIndex = i;
+    } else if (messages[i].role === "assistant" && lastAssistantMessageIndex === -1) {
+      lastAssistantMessageIndex = i;
+    }
+    
+    // Break early if we found both
+    if (lastUserMessageIndex !== -1 && lastAssistantMessageIndex !== -1) {
+      break;
+    }
+  }
 
   const characterChatReplacerDisplay = (message) => {
     // Replace <test> with an image or something.
@@ -34,6 +50,10 @@ function ChatList() {
     if (id === 0 && messages[0].role === "system") {
       return;
     }
+    // Only allow editing the most recent user or assistant message
+    if (id !== lastUserMessageIndex && id !== lastAssistantMessageIndex) {
+      return;
+    }
     setEditingMessageId(id);
     setEditContent(content);
   };
@@ -52,6 +72,10 @@ function ChatList() {
   const handleDeleteClick = (id) => {
     // Prevent deletion of system messages
     if (id === 0 && messages[0].role === "system") {
+      return;
+    }
+    // Only allow deleting the most recent user or assistant message
+    if (id !== lastUserMessageIndex && id !== lastAssistantMessageIndex) {
       return;
     }
     setDeletingMessageId(id);
@@ -88,6 +112,7 @@ function ChatList() {
                 isDeleting={deletingMessageId === id}
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
+                isRecentMessage={id === lastAssistantMessageIndex}
               />
             );
           } else if (message.role === "user") {
@@ -107,6 +132,7 @@ function ChatList() {
                 isDeleting={deletingMessageId === id}
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
+                isRecentMessage={id === lastUserMessageIndex}
               />
             );
           }
@@ -118,7 +144,7 @@ function ChatList() {
 }
 
 function CharacterChat({
-  text,
+ text,
   character,
  messageId,
   messageContent,
@@ -131,7 +157,8 @@ function CharacterChat({
   onCancelEdit,
   isDeleting,
   onConfirmDelete,
-  onCancelDelete
+  onCancelDelete,
+  isRecentMessage
 }) {
   // Process the text to apply styling
   const processText = (inputText) => {
@@ -215,7 +242,7 @@ function CharacterChat({
             dangerouslySetInnerHTML={{ __html: processedText }}
           />
         )}
-          {!isSystemMessage && !isEditing && !isDeleting && (
+          {!isSystemMessage && !isEditing && !isDeleting && isRecentMessage && (
             <div className="flex opacity-50 gap-2 mt-2">
               <button
                 onClick={() => onEdit(messageId, messageContent)}
@@ -253,7 +280,8 @@ function UserChat({
   onCancelEdit,
   isDeleting,
   onConfirmDelete,
-  onCancelDelete
+  onCancelDelete,
+  isRecentMessage
 }) {
   const processText = (inputText) => {
     if (!inputText) return "";
@@ -273,7 +301,7 @@ function UserChat({
 
   return (
     <div className="flex justify-end">
-        {!isSystemMessage && !isEditing && !isDeleting && (
+        {!isSystemMessage && !isEditing && !isDeleting && isRecentMessage && (
           <div className="flex items-center mb-2 gap-2 mr-2 opacity-40">
             <button
               onClick={() => onEdit(messageId, messageContent)}

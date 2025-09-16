@@ -5,6 +5,9 @@ import useUserStore from "./useUserStore";
 import useApiSettingStore from "./useApiSettingStore";
 
 const replacerTemplate = (template, character, user) => {
+  // Get pattern replacement settings from store
+  const { patternReplacementSettings } = useCharacterStore.getState();
+  
   const replacements = {
     memory: "",
     char: character?.name || "",
@@ -12,6 +15,7 @@ const replacerTemplate = (template, character, user) => {
     user: user?.name || "",
     user_description: user?.description || "",
     scenario: character?.scenario || "",
+    tools: patternReplacementSettings?.prompt || "",
   };
 
   // First pass: replace all direct placeholders
@@ -58,6 +62,13 @@ const useCharacterStore = create(
       },
       isLoading: false,
       isCharacterModalOpen: false,
+      isPatternReplacementModalOpen: false,
+      patternReplacementSettings: {
+        prompt: "",
+        findPattern: "",
+        replacePattern: "",
+        isRegex: true,
+      },
       //RENDER FIRST AS DEFAULT
       isInitialized: false,
       initializeMessage: () => {
@@ -245,6 +256,10 @@ const useCharacterStore = create(
           },
         }));
       },
+      // Pattern replacement modal state
+      setPatternReplacementModal: (isOpen) => set({ isPatternReplacementModalOpen: isOpen }),
+      // Pattern replacement settings
+      setPatternReplacementSettings: (settings) => set({ patternReplacementSettings: settings }),
     }),
     {
       name: "character-storage",

@@ -28,12 +28,9 @@ export default function Home() {
 
   useEffect(() => {
     initializeMessage();
-    console.log(character.messages);
   }, [initializeMessage]);
   useEffect(() => {
-    console.log(character.messages);
     setMessageCount(character.messages.length);
-    console.log(messageCount);
   }, [character.messages]);
 
   return (

@@ -8,6 +8,9 @@ Treat formatting as code rules: Dialogue="", Actions=no formatting, Thoughts=no 
 <Characters>
   <{{char}}>
     {{char_description}}
+<Tools>
+{{tools}}
+</Tools>
   </{{char}}>
   <{{user}}>
     {{user_description}}

@@ -1,4 +1,6 @@
 import { Edit, Trash2, Loader2, Grid } from "lucide-react";
+import useCharacterStore from "@/app/store/useCharacterStore";
+
 export default function CharacterChat({
   text,
   character,
@@ -31,14 +33,43 @@ export default function CharacterChat({
   const processedText = processText(text);
 
   const replacerTools = (text) => {
+    // Get pattern replacement settings from store
+    const { patternReplacementSettings } = useCharacterStore.getState();
     
-    let find = "[test]";
-    let replace =
-      "<img src='https://i.pinimg.com/736x/ec/ce/ae/ecceaee5b4c02ce2c5030da88e530169.jpg' />";
-    let htmlReplace = `
-
-    `;
-    return text.replace(find, htmlReplace);
+    // If no settings or patterns are empty, return original text
+    if (!patternReplacementSettings ||
+        !patternReplacementSettings.findPattern ||
+        !patternReplacementSettings.replacePattern) {
+      return text;
+    }
+    
+    // Replace {{tools}} placeholder in the replace pattern with the prompt input
+    let finalReplacePattern = patternReplacementSettings.replacePattern;
+    if (patternReplacementSettings.prompt) {
+      finalReplacePattern = finalReplacePattern.replace(/\{\{tools\}\}/g, patternReplacementSettings.prompt);
+    }
+    
+    try {
+      // Check if we should use regex or normal text replacement
+      if (patternReplacementSettings.isRegex) {
+        // Create regex from find pattern
+        const regex = new RegExp(patternReplacementSettings.findPattern, 'g');
+        
+        // Replace using the replace pattern
+        return text.replace(regex, finalReplacePattern);
+      } else {
+        // Use normal text replacement
+        // Escape special regex characters in the find pattern for literal matching
+        const escapedFindPattern = patternReplacementSettings.findPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedFindPattern, 'g');
+        
+        // Replace using the replace pattern
+        return text.replace(regex, finalReplacePattern);
+      }
+    } catch (error) {
+      console.error("Error in replacerTools:", error);
+      return text;
+    }
   };
 
   // Don't show edit/delete buttons for system messages

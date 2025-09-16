@@ -129,7 +129,7 @@ export default function CustomPromptModal({ onClose }) {
           className="w-full h-48 sm:h-64 px-4 py-3 bg-[#161616] rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
           value={promptValues[activeTab] || ''}
           onChange={(e) => handlePromptChange(activeTab, e.target.value)}
-          placeholder="Enter your custom prompt with placeholders like {{char}}, {{user}}, etc."
+          placeholder="Enter your custom prompt with placeholders like {{char}}, {{user}}, {{tools}}, etc."
         />
       </div>
     );
@@ -224,6 +224,9 @@ export default function CustomPromptModal({ onClose }) {
               </div>
               <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
                 <span className="text-[#e4ffe8] font-mono text-xs">{"{{memory}}"}</span>
+              </div>
+              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                <span className="text-[#e4ffe8] font-mono text-xs">{"{{tools}}"}</span>
               </div>
             </div>
           </div>

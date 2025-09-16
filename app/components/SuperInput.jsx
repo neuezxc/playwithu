@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings2, CodeXml, ArrowUp, Brain, User, Image as ImageIcon, FileText } from "lucide-react";
+import { Settings2, CodeXml, ArrowUp, Brain, User, FileText } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
@@ -10,7 +10,6 @@ import { replacePlaceholders } from "../utils/replacerTemplate";
 import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import { useState } from "react";
-import ImageGalleryModal from "./chat/ImageGalleryModal";
 
 export default function SuperInput() {
  const { api_key, model_id } = useApiSettingStore();
@@ -25,7 +24,6 @@ export default function SuperInput() {
   const setSummarizeText = useMemoryStore((state) => state.setSummarizeText);
   const setActive = useMemoryStore((state) => state.setActive);
   const setLoading = useCharacterStore((state) => state.setLoading);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
 
   const handleMessage = async () => {
@@ -172,13 +170,7 @@ export default function SuperInput() {
             >
               <Brain size={18} />
             </button>
-            <button 
-              onClick={() => setIsGalleryOpen(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
-            >
-              <ImageIcon size={18} />
-            </button>
-            <button 
+            <button
               onClick={() => setCharacterModal(true)}
               className="flex items-center justify-center px-3 h-8 bg-white/10 border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
             >
@@ -199,8 +191,6 @@ export default function SuperInput() {
       {/* Character Modal */}
       {isCharacterModalOpen && <CharacterModal />}
       
-      {/* Image Gallery Modal */}
-      {isGalleryOpen && <ImageGalleryModal onClose={() => setIsGalleryOpen(false)} />}
       
       {/* Custom Prompt Modal */}
       {isCustomPromptOpen && <CustomPromptModal onClose={() => setIsCustomPromptOpen(false)} />}

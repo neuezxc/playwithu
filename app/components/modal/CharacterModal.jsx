@@ -2,7 +2,6 @@
 import React, { useState, useRef } from "react";
 import { X, User, Image, FileText, MessageSquare, Upload, Download } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
-import GalleryManager from "../gallery/GalleryManager";
 
 export default function CharacterModal() {
   const { character, isCharacterModalOpen } = useCharacterStore();
@@ -21,7 +20,6 @@ export default function CharacterModal() {
     description: character.description || "",
     scenario: character.scenario || "",
     firstMessage: character.firstMessage || "",
-    galleryImages: character.galleryImages || [],
   });
 
   // Handle input changes
@@ -51,7 +49,6 @@ export default function CharacterModal() {
       description: character.description || "",
       scenario: character.scenario || "",
       firstMessage: character.firstMessage || "",
-      galleryImages: character.galleryImages || [],
     });
     setCharacterModal(false);
   };
@@ -92,7 +89,6 @@ export default function CharacterModal() {
           description: importedData.description || "",
           scenario: importedData.scenario || "",
           firstMessage: importedData.firstMessage || "",
-          galleryImages: importedData.galleryImages || [],
         });
       } catch (error) {
         console.error("Error parsing imported file:", error);
@@ -249,8 +245,6 @@ export default function CharacterModal() {
             />
           </div>
           
-          {/* Image Gallery Manager */}
-          <GalleryManager />
         </main>
 
         {/* Modal Footer */}

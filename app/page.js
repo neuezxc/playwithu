@@ -6,8 +6,9 @@ import useCharacterStore from "./store/useCharacterStore";
 import useChatStore from "./store/useChatStore";
 import useMemoryStore from "./store/useMemoryStore";
 import usePromptStore from "./store/usePromptStore";
-import { CharacterProfile, ChatList } from "./components";
+
 import { SuperInput } from "./components";
+import { ChatList } from "./components";
 import { ApiSettingsModal, MemoryModal } from "./components";
 
 export default function Home() {
@@ -38,7 +39,6 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center w-full h-[100dvh] bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
       {/* Character Profile */}
-      <CharacterProfile character={character} />
 
       {/* Chat Body */}
       <ChatList />

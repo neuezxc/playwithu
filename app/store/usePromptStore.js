@@ -32,13 +32,34 @@ Stay in character as {{char}}`;
 const usePromptStore = create(
   persist((set, get) => ({
     system_prompt: DEFAULT_SYSTEM_PROMPT,
-    custom_prompt: null,
+    custom_prompts: [],
+    selected_prompt_index: -1,
     setSystemPrompt: (prompt) => set({ system_prompt: prompt }),
-    setCustomPrompt: (prompt) => set({ custom_prompt: prompt }),
-    resetToDefault: () => set({ custom_prompt: null }),
+    setCustomPrompts: (prompts) => set({ custom_prompts: prompts }),
+    setSelectedPromptIndex: (index) => set({ selected_prompt_index: index }),
+    addCustomPrompt: (prompt) => {
+      const { custom_prompts } = get();
+      set({ custom_prompts: [...custom_prompts, prompt] });
+    },
+    updateCustomPrompt: (index, prompt) => {
+      const { custom_prompts } = get();
+      const updatedPrompts = [...custom_prompts];
+      updatedPrompts[index] = prompt;
+      set({ custom_prompts: updatedPrompts });
+    },
+    removeCustomPrompt: (index) => {
+      const { custom_prompts, selected_prompt_index } = get();
+      const updatedPrompts = custom_prompts.filter((_, i) => i !== index);
+      // If we're removing the selected prompt, reset selection
+      const newSelectedIndex = index === selected_prompt_index ? -1 : selected_prompt_index;
+      set({ custom_prompts: updatedPrompts, selected_prompt_index: newSelectedIndex });
+    },
     getEffectivePrompt: () => {
-      const { custom_prompt, system_prompt } = get();
-      return custom_prompt || system_prompt;
+      const { custom_prompts, selected_prompt_index, system_prompt } = get();
+      if (selected_prompt_index >= 0 && selected_prompt_index < custom_prompts.length) {
+        return custom_prompts[selected_prompt_index];
+      }
+      return system_prompt;
     }
   })),
   {

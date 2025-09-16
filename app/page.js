@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import React, { useEffect } from "react";
 
 import useApiSettingStore from "./store/useApiSettingStore";
@@ -39,7 +39,11 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center w-full h-[100dvh] bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">
       {/* Character Profile */}
-
+      <header className="flex-shrink-0 flex justify-center items-center w-full h-[45px] py-10">
+        <h1 className="text-base font-medium tracking-tight flex flex-col items-center">
+          {character.name}
+        </h1>
+      </header>
       {/* Chat Body */}
       <ChatList />
       {/* Input Area */}

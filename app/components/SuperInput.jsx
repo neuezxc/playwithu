@@ -179,13 +179,13 @@ export default function SuperInput() {
             </button>
             <button
               onClick={() => setPatternReplacementModal(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#4545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
             >
               <Asterisk />
             </button>
             <button
               onClick={() => setCharacterModal(true)}
-              className="flex items-center justify-center px-3 h-8 bg-white/5  rounded-lg  border-[#3A9E49] hover:bg-[#3A9E49]/60 transition-all"
+              className="flex items-center justify-center px-3 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
             >
               <span className="text-sm font-medium text-[#EEEEEE]">
                 Character

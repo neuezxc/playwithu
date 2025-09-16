@@ -16,20 +16,23 @@ export default function CustomPromptModal({ onClose }) {
     removeCustomPrompt
   } = usePromptStore();
   
-  const [activeTab, setActiveTab] = useState(selected_prompt_index >= 0 ? selected_prompt_index : 'default');
-  const [promptValues, setPromptValues] = useState(custom_prompts.length > 0 ? [...custom_prompts] : ['']);
+ const [activeTab, setActiveTab] = useState('default');
+ const [promptValues, setPromptValues] = useState(['']);
 
-  // Initialize prompt values when component mounts
-  useEffect(() => {
-    if (custom_prompts.length > 0) {
-      setPromptValues([...custom_prompts]);
-    } else {
-      setPromptValues(['']);
-    }
-    
-    // Set active tab to the selected prompt or default
-    setActiveTab(selected_prompt_index >= 0 ? selected_prompt_index : 'default');
-  }, [custom_prompts, selected_prompt_index]);
+ // Initialize prompt values and active tab when component mounts
+ useEffect(() => {
+   // Update prompt values if we have persisted data
+   if (custom_prompts.length > 0) {
+     setPromptValues([...custom_prompts]);
+   }
+   
+   // Set active tab to the selected prompt or default
+   if (selected_prompt_index >= 0) {
+     setActiveTab(selected_prompt_index);
+   } else {
+     setActiveTab('default');
+   }
+ }, [custom_prompts, selected_prompt_index]);
 
   const handleSave = () => {
     setCustomPrompts(promptValues);

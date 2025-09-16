@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings2, CodeXml, ArrowUp, Brain, User, FileText, Image } from "lucide-react";
+import { Settings2, CodeXml, ArrowUp, Brain, User, FileText, Image, Braces, Asterisk  } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
@@ -80,11 +80,14 @@ export default function SuperInput() {
       const { updateSystemPrompt } = useCharacterStore.getState();
       updateSystemPrompt(processedPrompt);
 
-      // Create messages array with the processed prompt
-      const messagesWithPrompt = [
-        { role: "system", content: processedPrompt },
-        ...updatedMessage
-      ];
+      // Update the first message in updatedMessage to ensure it has the latest processed prompt
+      // The first message should be the system prompt
+      const messagesWithPrompt = updatedMessage.map((message, index) => {
+        if (index === 0 && message.role === "system") {
+          return { ...message, content: processedPrompt };
+        }
+        return message;
+      });
 
       const response = await fetch(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -116,7 +119,7 @@ export default function SuperInput() {
       setCharacter({
         ...character,
         messages: [
-          ...updatedMessage, // Use the updatedMessage array that includes user message
+          ...messagesWithPrompt, // Use the messagesWithPrompt array that includes the updated system prompt
           {
             role: "assistant",
             content: text,
@@ -158,34 +161,34 @@ export default function SuperInput() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setModal(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
             >
               <Settings2 size={16} />
             </button>
             <button
               onClick={() => setIsCustomPromptOpen(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
             >
-              <CodeXml size={18} />
+              <Braces size={18}/>
             </button>
             <button
               onClick={() => setModalMemory(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all "
+              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all "
             >
               <Brain size={18} />
             </button>
             <button
               onClick={() => setPatternReplacementModal(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/10 border border-[#4545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#4545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
             >
-              <FileText size={18} />
+              <Asterisk />
             </button>
             <button
               onClick={() => setCharacterModal(true)}
-              className="flex items-center justify-center px-3 h-8 bg-white/10 border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+              className="flex items-center justify-center px-3 h-8 bg-white/5  rounded-lg  border-[#3A9E49] hover:bg-[#3A9E49]/60 transition-all"
             >
               <span className="text-sm font-medium text-[#EEEEEE]">
-                Characters
+                Character
               </span>
             </button>
           </div>
@@ -193,7 +196,7 @@ export default function SuperInput() {
             onClick={handleMessage}
             className="flex items-center justify-center w-8 h-8 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg hover:bg-[#3A9E49]/50 transition-colors"
           >
-            <ArrowUp size={16} className="text-[#D3D3D3]" />
+            <ArrowUp size={18} className="text-[#D3D3D3]" />
           </button>
         </div>
       </div>

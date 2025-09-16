@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from "react";
-import { X, FileText } from "lucide-react";
+import { X, FileText, Asterisk } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
 
 export default function PatternReplacementModal() {
@@ -64,8 +64,8 @@ export default function PatternReplacementModal() {
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
-            <FileText />
-            Pattern Replacement Settings
+            <Asterisk />
+            Pattern Replacement
           </h2>
           <button
             onClick={handleClose}
@@ -89,26 +89,22 @@ export default function PatternReplacementModal() {
               onChange={(e) => handleInputChange("prompt", e.target.value)}
               placeholder="Enter your prompt here..."
             />
-            <p className="text-xs text-[#8e8e8e]">
-              Example: {'<Tools><Pattern Commands>'}Always include an emotion/behavior pattern command at the end of {'{{char}}'}'s dialog or narration. Use this format: [{'<command>'}]. - Select from the list below, avoiding repetition when possible. - Double-check the command exists in the list before outputting. List: neutral, positive, negative, dissatisfied, anger, crying, satisfied, cheer Example: [neutral]{'</Pattern Commands></Tools>'}
-            </p>
+            
           </div>
 
           {/* Find Pattern */}
           <div className="flex flex-col gap-2.5">
             <label className="text-sm font-medium text-[#8e8e] tracking-[-0.2px]">
-              Find Pattern (Regex)
+              Find (Regex)
             </label>
             <input
               type="text"
               className="w-full bg-[#161616] border border-[#33] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
               value={editableSettings.findPattern}
               onChange={(e) => handleInputChange("findPattern", e.target.value)}
-              placeholder="Enter regex pattern to find..."
+              placeholder=""
             />
-            <p className="text-xs text-[#8e8e8e]">
-              Example: \[s+(\w+)\]
-            </p>
+            
           </div>
           
           {/* Regex Toggle */}
@@ -128,17 +124,18 @@ export default function PatternReplacementModal() {
           {/* Replace Pattern */}
           <div className="flex flex-col gap-2.5">
             <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px]">
-              Replace Pattern
+              Replace
             </label>
             <textarea
               className="w-full h-24 bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
               value={editableSettings.replacePattern}
               onChange={(e) => handleInputChange("replacePattern", e.target.value)}
-              placeholder="Enter replacement pattern..."
+              placeholder=""
             />
-            <p className="text-xs text-[#8e8e8e]">
-              Example: {'<img src="https://anywebsite.com/$1.png" style="width: 50%;" />'}
-            </p>
+
+            <div className="text-[0.8em] mt-3">
+              Template here: <a className="text-[#5fdb72]" href="https://rentry.co/knwsnd75">https://rentry.co/knwsnd75</a>
+            </div>
           </div>
         </main>
 

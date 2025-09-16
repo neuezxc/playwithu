@@ -150,7 +150,7 @@ export default function SuperInput() {
     <footer className="flex flex-col items-center w-full lg:p-4">
       <div className="w-full max-w-xl bg-[#212121] border border-[#282828] lg:rounded-2xl rounded-t-2xl p-3 flex flex-col gap-3">
         <textarea
-          className="w-full bg-transparent text-[#CDCDCD] text-base placeholder:text-[#A2A2A2] resize-none outline-none"
+          className="w-full bg-transparent text-[#CDCDCD] text-base placeholder:text-[#A2A2A2] resize-none outline-none h-[40px] lg:h-[auto]"
           placeholder="Enter to send chat + Enter for linebreak."
           rows={3}
           value={user.message}

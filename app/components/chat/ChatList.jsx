@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import useCharacterStore from "../../store/useCharacterStore";
 import { useRef, useEffect } from "react";
 import { Edit, Trash2, Loader2, Grid } from "lucide-react";
-
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 
 import CharacterChat from "./CharacterChat";
 
@@ -279,10 +280,9 @@ function UserChat({
             </div>
           </div>
         ) : (
-          <p
-            className="text-sm font-normal text-[#CDCDCD]"
-            dangerouslySetInnerHTML={{ __html: processedText }}
-          />
+          <div className="text-sm font-normal text-[#CDCDCD]">
+            <ReactMarkdown rehypePlugins={[rehypeRaw]}>{processedText}</ReactMarkdown>
+          </div>
         )}
       </div>
     </div>

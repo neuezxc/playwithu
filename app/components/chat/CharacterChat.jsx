@@ -1,5 +1,7 @@
 import { Edit, Trash2, Loader2, Grid } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 
 export default function CharacterChat({
   text,
@@ -137,10 +139,9 @@ export default function CharacterChat({
             </div>
           </div>
         ) : (
-          <p
-            className="text-sm font-normal text-[#CDCDCD] flex flex-col gap-4"
-            dangerouslySetInnerHTML={{ __html: replacerTools(processedText) }}
-          />
+          <div className="text-sm font-normal text-[#CDCDCD] flex flex-col gap-4">
+            <ReactMarkdown rehypePlugins={[rehypeRaw]}>{replacerTools(processedText)}</ReactMarkdown>
+          </div>
         )}
         {!isSystemMessage && !isEditing && !isDeleting && isRecentMessage && (
           <div className="flex opacity-50 gap-2 mt-2">

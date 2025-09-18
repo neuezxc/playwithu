@@ -7,7 +7,7 @@ import useApiSettingStore from "./useApiSettingStore";
 const replacerTemplate = (template, character, user) => {
   // Get pattern replacement settings from store
   const { patternReplacementSettings } = useCharacterStore.getState();
-  
+
   const replacements = {
     memory: "",
     char: character?.name || "",
@@ -39,7 +39,8 @@ const useCharacterStore = create(
       character: {
         id: "default",
         name: "Hayeon",
-        avatarURL: "https://github.com/neuezxc/custom-chats/blob/develop/public/urgirl/hayeon-moving.gif?raw=true",
+        avatarURL:
+          "https://github.com/neuezxc/custom-chats/blob/develop/public/urgirl/hayeon-moving.gif?raw=true",
         bio: "You Live With Hayeon (And Nobody Knows)",
         description: `
             You are Hayeon, a 21-year-old Korean-Filipino female college student, streamer, and influencer. You stand at 5'4" with a striking mix of cute and pretty features, short hair, and bangs that frame your face. Your physique is well-proportioned and attractive, drawing millions of fans on social media. You carry yourself with confidence, knowing how to use your looks to your advantage.
@@ -67,7 +68,8 @@ const useCharacterStore = create(
         {
           id: "default",
           name: "Hayeon",
-          avatarURL: "https://github.com/neuezxc/custom-chats/blob/develop/public/urgirl/hayeon-moving.gif?raw=true",
+          avatarURL:
+            "https://github.com/neuezxc/custom-chats/blob/develop/public/urgirl/hayeon-moving.gif?raw=true",
           bio: "You Live With Hayeon (And Nobody Knows)",
           description: `
             You are Hayeon, a 21-year-old Korean-Filipino female college student, streamer, and influencer. You stand at 5'4" with a striking mix of cute and pretty features, short hair, and bangs that frame your face. Your physique is well-proportioned and attractive, drawing millions of fans on social media. You carry yourself with confidence, knowing how to use your looks to your advantage.
@@ -89,7 +91,22 @@ const useCharacterStore = create(
 "Hey, babe," she said with a playful smile, "what are you up to?"
 `.replace(/{{user}}/g, useUserStore.getState().user.name),
           messages: [],
-        }
+        },
+        {
+          id: "2",
+          name: "Dummy",
+          avatarURL: "https://i.postimg.cc/qqk3GjHQ/image.jpg",
+          bio: `i'm dummy`,
+          description: `
+        `,
+          scenario: `
+              
+        `,
+          firstMessage: `
+You dummy!
+`.replace(/{{user}}/g, useUserStore.getState().user.name),
+          messages: [],
+        },
       ],
       isLoading: false,
       isCharacterModalOpen: false,
@@ -198,7 +215,7 @@ const useCharacterStore = create(
         // Get required stores
         const { api_key, model_id } = useApiSettingStore.getState();
         const { setLoading } = get();
-        
+
         // Update the user message
         set((state) => ({
           character: {
@@ -208,7 +225,7 @@ const useCharacterStore = create(
             ),
           },
         }));
-        
+
         // Remove all messages after the edited user message
         set((state) => ({
           character: {
@@ -216,14 +233,14 @@ const useCharacterStore = create(
             messages: state.character.messages.slice(0, index + 1),
           },
         }));
-        
+
         // Set loading state
         setLoading(true);
-        
+
         try {
           // Get the current messages (up to and including the edited user message)
           const currentMessages = get().character.messages;
-          
+
           // Make API call to regenerate the character's response
           const response = await fetch(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -239,9 +256,9 @@ const useCharacterStore = create(
               }),
             }
           );
-          
+
           const data = await response.json();
-          
+
           // Error handling for API response
           if (!response.ok) {
             throw new Error(data.error?.message || "API request failed");
@@ -249,9 +266,9 @@ const useCharacterStore = create(
           if (!data.choices || data.choices.length === 0) {
             throw new Error("No choices returned from API");
           }
-          
+
           const text = data.choices[0].message.content;
-          
+
           // Add the character's new response
           set((state) => ({
             character: {
@@ -266,7 +283,10 @@ const useCharacterStore = create(
             },
           }));
         } catch (error) {
-          console.error("Error regenerating character response:", error.message);
+          console.error(
+            "Error regenerating character response:",
+            error.message
+          );
         } finally {
           // Reset loading state
           setLoading(false);
@@ -279,7 +299,7 @@ const useCharacterStore = create(
           console.warn("Cannot delete system message");
           return;
         }
-        
+
         set((state) => ({
           character: {
             ...state.character,
@@ -288,45 +308,61 @@ const useCharacterStore = create(
         }));
       },
       // Pattern replacement modal state
-      setPatternReplacementModal: (isOpen) => set({ isPatternReplacementModalOpen: isOpen }),
+      setPatternReplacementModal: (isOpen) =>
+        set({ isPatternReplacementModalOpen: isOpen }),
       // Pattern replacement settings
-      setPatternReplacementSettings: (settings) => set({ patternReplacementSettings: settings }),
-      
+      setPatternReplacementSettings: (settings) =>
+        set({ patternReplacementSettings: settings }),
+
       // Character management functions
       // Add a new character
-      addCharacter: (newCharacter) => set((state) => ({
-        characters: [...state.characters, { ...newCharacter, id: Date.now().toString() }]
-      })),
-      
+      addCharacter: (newCharacter) =>
+        set((state) => ({
+          characters: [
+            ...state.characters,
+            { ...newCharacter, id: Date.now().toString() },
+          ],
+        })),
+
       // Update an existing character
-      updateCharacter: (updatedCharacter) => set((state) => {
-        // Check if the updated character is the active character
-        const isUpdatingActiveCharacter = state.character.id === updatedCharacter.id;
-        
-        return {
-          characters: state.characters.map(char =>
-            char.id === updatedCharacter.id ? updatedCharacter : char
-          ),
-          // Also update the active character if it's the one being updated
-          ...(isUpdatingActiveCharacter ? { character: updatedCharacter } : {})
-        };
-      }),
-      
-      // Delete a character
-      deleteCharacter: (characterId) => set((state) => ({
-        characters: state.characters.filter(char => char.id !== characterId)
-      })),
-      
-      // Set active character
-      setActiveCharacter: (characterId) => set((state) => {
-        const selectedCharacter = state.characters.find(char => char.id === characterId);
-        if (selectedCharacter) {
+      updateCharacter: (updatedCharacter) =>
+        set((state) => {
+          // Check if the updated character is the active character
+          const isUpdatingActiveCharacter =
+            state.character.id === updatedCharacter.id;
+
           return {
-            character: selectedCharacter
+            characters: state.characters.map((char) =>
+              char.id === updatedCharacter.id ? updatedCharacter : char
+            ),
+            // Also update the active character if it's the one being updated
+            ...(isUpdatingActiveCharacter
+              ? { character: updatedCharacter }
+              : {}),
           };
-        }
-        return state;
-      }),
+        }),
+
+      // Delete a character
+      deleteCharacter: (characterId) =>
+        set((state) => ({
+          characters: state.characters.filter(
+            (char) => char.id !== characterId
+          ),
+        })),
+
+      // Set active character
+      setActiveCharacter: (characterId) =>
+        set((state) => {
+          const selectedCharacter = state.characters.find(
+            (char) => char.id === characterId
+          );
+          if (selectedCharacter) {
+            return {
+              character: selectedCharacter,
+            };
+          }
+          return state;
+        }),
     }),
     {
       name: "character-storage",

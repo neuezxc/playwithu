@@ -1,14 +1,15 @@
 'use client';
-import React, { useState } from 'react';
-import { SquarePen, Download, Trash2, Plus } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { SquarePen, Download, Trash2, Plus, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import useCharacterStore from '@/app/store/useCharacterStore';
 import CharacterModal from '@/app/components/modal/CharacterModal';
 
 export default function CharacterManager() {
   const router = useRouter();
-  const { characters, character: activeCharacter, setActiveCharacter, deleteCharacter, isCharacterModalOpen, setCharacterModal } = useCharacterStore();
+  const { characters, character: activeCharacter, setActiveCharacter, deleteCharacter, isCharacterModalOpen, setCharacterModal, addCharacter, setPatternReplacementSettings } = useCharacterStore();
   const [editingCharacter, setEditingCharacter] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleCreateCharacter = () => {
     setEditingCharacter(null);
@@ -30,10 +31,84 @@ export default function CharacterManager() {
     setActiveCharacter(characterId);
   };
 
+  const handleImportCharacter = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleExportAllCharacters = () => {
+    const dataStr = JSON.stringify(characters, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = 'all_characters.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const handleExportCharacter = (character) => {
+    const dataStr = JSON.stringify(character, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `${character.name || 'character'}_data.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const handleFileImport = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        
+        // Check if it's a single character or an array of characters
+        if (Array.isArray(importedData)) {
+          // Import multiple characters
+          importedData.forEach(character => {
+            addCharacter({
+              ...character,
+              messages: character.messages || [],
+              id: character.id || Date.now().toString() + Math.random().toString(36).substr(2, 9)
+            });
+            
+            // If the imported character has pattern replacement settings, update the global settings
+            // Note: This will overwrite the settings with the last character's settings if multiple characters have them
+            if (character.patternReplacementSettings) {
+              setPatternReplacementSettings(character.patternReplacementSettings);
+            }
+          });
+        } else {
+          // Import single character
+          addCharacter({
+            ...importedData,
+            messages: importedData.messages || [],
+            id: importedData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9)
+          });
+          
+          // If the imported character has pattern replacement settings, update the global settings
+          if (importedData.patternReplacementSettings) {
+            setPatternReplacementSettings(importedData.patternReplacementSettings);
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing imported file:", error);
+        alert("Error importing file. Please make sure it's a valid JSON file.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-    <div className="bg-[#151615] h-screen w-full flex justify-center p-4 md:p-8">
+    <div className="bg-[#151615] h-screen w-full flex justify-center p-2 md:p-8">
       {/* Main Content Container */}
-      <div className="bg-[#151615] rounded-lg flex flex-col w-full max-w-6xl p-4 sm:p-8">
+      <div className="bg-[#151615] rounded-lg flex flex-col w-full max-w-6xl p-2 sm:p-8">
         
         {/* Header */}
         <header className="w-full pb-6 mb-6 border-b border-[#3b3b3b]">
@@ -52,7 +127,7 @@ export default function CharacterManager() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-          <button 
+          <button
             onClick={handleCreateCharacter}
             className="bg-[#5fdb7226] border border-[#5fdb72] rounded-md px-5 py-2 text-[#edffef] text-sm font-medium hover:bg-[#5fdb7236] transition-colors flex items-center gap-2"
           >
@@ -60,17 +135,23 @@ export default function CharacterManager() {
             Create Character
           </button>
           <div className="flex items-center gap-2">
-            <button className="bg-[#45454533] border border-[#454545] rounded-md px-5 py-2 text-white text-sm font-medium hover:bg-[#45454555] transition-colors">
+            <button
+              onClick={handleImportCharacter}
+              className="bg-[#45454533] border border-[#454545] rounded-md px-5 py-2 text-white text-sm font-medium hover:bg-[#45454555] transition-colors"
+            >
               Import
             </button>
-            <button className="bg-[#45454533] border border-[#454545] rounded-md px-5 py-2 text-white text-sm font-medium hover:bg-[#45454555] transition-colors">
-              Export
+            <button
+              onClick={handleExportAllCharacters}
+              className="bg-[#45454533] border border-[#454545] rounded-md px-5 py-2 text-white text-sm font-medium hover:bg-[#45454555] transition-colors"
+            >
+              Export All
             </button>
           </div>
         </div>
 
         {/* Character List Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
           {characters.map((character) => (
             <div 
               key={character.id} 
@@ -107,10 +188,13 @@ export default function CharacterManager() {
                       className={character.id === activeCharacter.id ? "text-[#97D7A0]" : "text-[#DADADA]"} 
                     />
                   </button>
-                  <button className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
-                    <Download 
-                      size={16} 
-                      className={character.id === activeCharacter.id ? "text-[#97D7A0]" : "text-[#DADADA]"} 
+                  <button
+                    onClick={() => handleExportCharacter(character)}
+                    className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+                  >
+                    <Download
+                      size={16}
+                      className={character.id === activeCharacter.id ? "text-[#97D7A0]" : "text-[#DADADA]"}
                     />
                   </button>
                   <button 
@@ -136,6 +220,15 @@ export default function CharacterManager() {
           ))}
         </div>
       </div>
+      
+      {/* Hidden file input for import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileImport}
+        accept=".json"
+        className="hidden"
+      />
       
       {/* Character Modal */}
       {isCharacterModalOpen && <CharacterModal character={editingCharacter} prefillActive={false} />}

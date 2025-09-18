@@ -155,10 +155,11 @@ export default function CharacterManager() {
           {characters.map((character) => (
             <div 
               key={character.id} 
-              className={`rounded-lg overflow-hidden flex flex-col group basis-1/2 ${
+              onClick={() => handleSetActiveCharacter(character.id)}
+              className={`rounded-lg overflow-hidden flex flex-col group basis-1/2 cursor-pointer ${
                 character.id === activeCharacter.id 
                   ? 'bg-[#5fdb721a] border border-[#5fdb72]' 
-                  : 'bg-[#4545451a] border-2 border-[#454545]'
+                  : 'bg-[#4545451a] border-2 border-[#454545] hover:border-[#5fdb72]'
               }`}
             >
               <div className="w-full h-56 bg-[#404040]">
@@ -180,7 +181,10 @@ export default function CharacterManager() {
                 </p>
                 <div className="flex items-center">
                   <button 
-                    onClick={() => handleEditCharacter(character)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditCharacter(character);
+                    }}
                     className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
                   >
                     <SquarePen 
@@ -189,7 +193,10 @@ export default function CharacterManager() {
                     />
                   </button>
                   <button
-                    onClick={() => handleExportCharacter(character)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleExportCharacter(character);
+                    }}
                     className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
                   >
                     <Download
@@ -198,7 +205,10 @@ export default function CharacterManager() {
                     />
                   </button>
                   <button 
-                    onClick={() => handleDeleteCharacter(character.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteCharacter(character.id);
+                    }}
                     className="p-1.5 rounded-full hover:bg-white/10 transition-colors ml-auto"
                   >
                     <Trash2 
@@ -206,14 +216,6 @@ export default function CharacterManager() {
                       className="text-white/30 transition-colors" 
                     />
                   </button>
-                  {character.id !== activeCharacter.id && (
-                    <button 
-                      onClick={() => handleSetActiveCharacter(character.id)}
-                      className="ml-2 px-3 py-1 bg-[#5fdb7226] border border-[#5fdb72] rounded text-[#edffef] text-xs hover:bg-[#5fdb7236] transition-colors"
-                    >
-                      Set Active
-                    </button>
-                  )}
                 </div>
               </div>
             </div>

@@ -3,24 +3,26 @@ import React, { useState, useRef } from "react";
 import { X, User, Image, FileText, MessageSquare, Upload, Download } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
 
-export default function CharacterModal() {
-  const { character, isCharacterModalOpen, patternReplacementSettings } = useCharacterStore();
+export default function CharacterModal({ character: editingCharacter }) {
+  const { character: activeCharacter, characters, isCharacterModalOpen, patternReplacementSettings } = useCharacterStore();
   const setCharacterModal = useCharacterStore((state) => state.setCharacterModal);
   const setCharacter = useCharacterStore((state) => state.setCharacter);
   const resetMessage = useCharacterStore((state) => state.resetMessage);
   const setPatternReplacementSettings = useCharacterStore((state) => state.setPatternReplacementSettings);
+  const addCharacter = useCharacterStore((state) => state.addCharacter);
+  const updateCharacter = useCharacterStore((state) => state.updateCharacter);
 
   // Ref for hidden file input
   const fileInputRef = useRef(null);
 
   // Local state for editing character details
   const [editableCharacter, setEditableCharacter] = useState({
-    name: character.name || "",
-    avatarURL: character.avatarURL || "",
-    bio: character.bio || "",
-    description: character.description || "",
-    scenario: character.scenario || "",
-    firstMessage: character.firstMessage || "",
+    name: editingCharacter?.name || activeCharacter?.name || "",
+    avatarURL: editingCharacter?.avatarURL || activeCharacter?.avatarURL || "",
+    bio: editingCharacter?.bio || activeCharacter?.bio || "",
+    description: editingCharacter?.description || activeCharacter?.description || "",
+    scenario: editingCharacter?.scenario || activeCharacter?.scenario || "",
+    firstMessage: editingCharacter?.firstMessage || activeCharacter?.firstMessage || "",
   });
 
   // Handle input changes
@@ -33,24 +35,59 @@ export default function CharacterModal() {
 
   // Save changes
   const handleSave = () => {
-    setCharacter({
-      ...character,
-      ...editableCharacter,
-    });
+    if (editingCharacter) {
+      // Update existing character
+      updateCharacter({
+        ...editingCharacter,
+        ...editableCharacter,
+      });
+    } else {
+      // Update active character (when editing from SuperInput)
+      setCharacter({
+        ...activeCharacter,
+        ...editableCharacter,
+      });
+      
+      // Also update the character in the characters array
+      updateCharacter({
+        ...activeCharacter,
+        ...editableCharacter,
+      });
+    }
     setCharacterModal(false);
   };
 
   // Close modal without saving
   const handleClose = () => {
-    // Reset editable character to current character values
-    setEditableCharacter({
-      name: character.name || "",
-      avatarURL: character.avatarURL || "",
-      bio: character.bio || "",
-      description: character.description || "",
-      scenario: character.scenario || "",
-      firstMessage: character.firstMessage || "",
-    });
+    // Reset editable character to current character values or empty for new character
+    if (editingCharacter) {
+      setEditableCharacter({
+        name: editingCharacter.name || "",
+        avatarURL: editingCharacter.avatarURL || "",
+        bio: editingCharacter.bio || "",
+        description: editingCharacter.description || "",
+        scenario: editingCharacter.scenario || "",
+        firstMessage: editingCharacter.firstMessage || "",
+      });
+    } else if (activeCharacter) {
+      setEditableCharacter({
+        name: activeCharacter.name || "",
+        avatarURL: activeCharacter.avatarURL || "",
+        bio: activeCharacter.bio || "",
+        description: activeCharacter.description || "",
+        scenario: activeCharacter.scenario || "",
+        firstMessage: activeCharacter.firstMessage || "",
+      });
+    } else {
+      setEditableCharacter({
+        name: "",
+        avatarURL: "",
+        bio: "",
+        description: "",
+        scenario: "",
+        firstMessage: "",
+      });
+    }
     setCharacterModal(false);
   };
 

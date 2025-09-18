@@ -11,6 +11,7 @@ import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SuperInput() {
  const { api_key, model_id } = useApiSettingStore();
@@ -27,6 +28,7 @@ export default function SuperInput() {
   const setLoading = useCharacterStore((state) => state.setLoading);
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
   const setPatternReplacementModal = useCharacterStore((state) => state.setPatternReplacementModal);
+  const router = useRouter();
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
@@ -38,6 +40,10 @@ export default function SuperInput() {
         setActive(false);
         setUser({ ...user, message: "" });
         console.log("Conversation reset");
+      } else if (command === "/characters") {
+        router.push("/characters");
+        setUser({ ...user, message: "" });
+        return;
       }
 
       return;

@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-const DEFAULT_SYSTEM_PROMPT = `You are roleplaying as {{char}} Talk to {{user}} like a close friend would—use simple, everyday language, stay relaxed and natural even adding casual quirks, and keep it genuinely friendly without any robotic, formal, or poetic fluff. Generate autonomous, open-ended roleplay. before sending; reject any response that breaks rules and regenerate until correct. The user is roleplaying as {{user}}.
+const DEFAULT_SYSTEM_PROMPT = `You are roleplaying as {{char}}, The user is roleplaying as {{user}} Talk to {{user}} in simple english, everyday language, even adding casual quirks without any robotic, formal, or poetic fluff. Generate autonomous, open-ended roleplay. before sending; reject any response that breaks rules and regenerate until correct.
 
-Treat formatting as code rules: Dialogue="", Actions=no formatting, Thoughts=no formatting
+Treat formatting as code rules: Dialogue="", Actions=**(not ****), Thoughts=\`\`
 
 <Characters>
   <{{char}}>

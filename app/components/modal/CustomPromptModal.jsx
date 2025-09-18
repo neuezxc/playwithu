@@ -123,7 +123,7 @@ export default function CustomPromptModal({ onClose }) {
           </label>
           <textarea
             id="defaultPrompt"
-            className="w-full h-48 sm:h-64 px-4 py-3 bg-[#161616] rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
+            className="w-full h-48 sm:h-64 px-4 py-3 bg-green-500/20 rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72]/0 transition-shadow resize-none"
             value={system_prompt}
             readOnly
             placeholder="Default prompt template"
@@ -147,7 +147,7 @@ export default function CustomPromptModal({ onClose }) {
             </label>
             <input
               type="text"
-              className="w-full max-w-xs px-2 py-1 bg-[#161616] rounded text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
+              className="w-full max-w-xs px-2 py-1 bg-[#161616]/30 border border-white/10 rounded text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
               value={promptNames[activeTab] || `Prompt ${activeTab + 1}`}
               onChange={(e) => handlePromptNameChange(activeTab, e.target.value)}
               placeholder={`Prompt ${activeTab + 1}`}
@@ -165,7 +165,7 @@ export default function CustomPromptModal({ onClose }) {
         </div>
         <textarea
           id={`customPrompt-${activeTab}`}
-          className="w-full h-48 sm:h-64 px-4 py-3 bg-[#161616] rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
+          className="w-full h-48 sm:h-64 px-4 py-3 bg-[#161616]/30 border border-white/10 rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
           value={promptValues[activeTab] || ''}
           onChange={(e) => handlePromptChange(activeTab, e.target.value)}
           placeholder="Enter your custom prompt with placeholders like {{char}}, {{user}}, {{tools}}, etc."
@@ -176,14 +176,14 @@ export default function CustomPromptModal({ onClose }) {
 
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 bg-opacity-50 p-4 overflow-y-auto">
       {/* Modal Content */}
-      <div className="w-full max-w-3xl bg-[#2121] rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-4 mx-2">
+      <div className="w-full max-w-3xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-4 mx-2 border border-white/20 bg-white/2">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-4 border-b border-[#3b3b3b]">
           <div>
             <h2 className="text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
-              <FileText size={20} className="text-[#5fdb72]" />
+              <FileText size={20}  />
               Custom Prompts
             </h2>
             <p className="text-xs text-[#8e8e] mt-1">
@@ -195,7 +195,7 @@ export default function CustomPromptModal({ onClose }) {
             className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
             aria-label="Close modal"
           >
-            <X size={16} className="text-[#9F9F]" />
+            <X size={16}  />
           </button>
         </header>
         

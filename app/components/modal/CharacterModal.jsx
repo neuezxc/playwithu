@@ -102,7 +102,7 @@ export default function CharacterModal() {
 
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4 ">
       {/* Hidden file input for import */}
       <input
         type="file"
@@ -113,7 +113,7 @@ export default function CharacterModal() {
       />
       
       {/* Modal Content */}
-      <div className="w-full max-w-2xl bg-[#2121] rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden">
+      <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden border border-white/30 bg-white/2" >
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
@@ -144,7 +144,7 @@ export default function CharacterModal() {
               className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
               aria-label="Close modal"
             >
-              <X size={16} className="text-[#9F9F]" />
+              <X size={16}  />
             </button>
           </div>
         </header>

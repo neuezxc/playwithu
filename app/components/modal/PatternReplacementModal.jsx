@@ -60,7 +60,7 @@ export default function PatternReplacementModal() {
     // Modal Overlay: Centers the modal and provides a backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4">
       {/* Modal Content */}
-      <div className="w-full max-w-2xl bg-[#2121] rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden">
+      <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden border border-white/20 bg-white/2">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
@@ -72,7 +72,7 @@ export default function PatternReplacementModal() {
             className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
             aria-label="Close modal"
           >
-            <X size={16} className="text-[#9F9F]" />
+            <X size={16}  />
           </button>
         </header>
 
@@ -84,7 +84,7 @@ export default function PatternReplacementModal() {
               Prompt
             </label>
             <textarea
-              className="w-full h-32 bg-[#1616] border border-[#33] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
+              className="w-full h-32 bg-[#1616]/50 border border-green-300/70  rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
               value={editableSettings.prompt}
               onChange={(e) => handleInputChange("prompt", e.target.value)}
               placeholder="Enter your prompt here..."
@@ -99,7 +99,7 @@ export default function PatternReplacementModal() {
             </label>
             <input
               type="text"
-              className="w-full bg-[#161616] border border-[#33] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
+              className="w-full bg-[#161616]/50 border border-[white]/20 rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
               value={editableSettings.findPattern}
               onChange={(e) => handleInputChange("findPattern", e.target.value)}
               placeholder=""
@@ -112,7 +112,7 @@ export default function PatternReplacementModal() {
             <input
               type="checkbox"
               id="isRegex"
-              className="w-4 h-4 bg-[#161616] border border-[#333] rounded accent-[#5fdb72]"
+              className="w-4 h-4 bg-[#161616]/50 border border-[#333] rounded accent-[#5fdb72]"
               checked={editableSettings.isRegex}
               onChange={(e) => handleCheckboxChange("isRegex", e.target.checked)}
             />

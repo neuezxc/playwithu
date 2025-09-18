@@ -194,7 +194,7 @@ export default function SuperInput() {
           </div>
           <button
             onClick={handleMessage}
-            className="flex items-center justify-center w-8 h-8 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg hover:bg-[#3A9E49]/50 transition-colors"
+            className="flex items-center justify-center w-8 h-8 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg text-white hover:bg-[#3A9E49]/50 transition-colors"
           >
             <ArrowUp size={18} className="text-[#D3D3D3]" />
           </button>

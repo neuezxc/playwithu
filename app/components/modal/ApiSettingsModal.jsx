@@ -17,12 +17,12 @@ export default function ApiSettingsModal() {
 
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm bg-opacity-50 p-4">
       {/* Modal Content */}
-      <div className="w-full max-w-2xl bg-[#212121] rounded-xl shadow-lg flex flex-col font-sans">
+      <div className="w-full max-w-2xl rounded-xl shadow-lg flex flex-col font-sans border border-white/20 bg-white/2">
         {/* Modal Header */}
-        <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
-          <h2 className="text-2xl font-bold text-[#f2f2f2] tracking-tight">
+        <header className="flex items-center justify-between p-6 py-4 border-b border-[#3b3b3b]">
+          <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
             API settings
           </h2>
           <button
@@ -36,11 +36,11 @@ export default function ApiSettingsModal() {
 
         {/* Tabs */}
         <div className="px-7 border-b border-[#3b3b3b]">
-          <nav className="flex items-center gap-10 -mb-px">
-            <button className="py-4 text-lg font-medium text-[#5fdb72] border-b-2 border-[#5fdb72]">
+          <nav className="flex items-center gap-10 -mb-px ">
+            <button className="py-2 text-md  text-[#5fdb72] border-b-2 border-[#5fdb72]">
               Connection
             </button>
-            <button className="py-4 text-lg font-medium text-[#d9d9d9] border-b-2 border-transparent hover:text-white transition-colors">
+            <button className="py-2 text-md text-[#d9d9d9] border-b-2 border-transparent hover:text-white transition-colors">
               Parameters
             </button>
           </nav>
@@ -59,7 +59,7 @@ export default function ApiSettingsModal() {
           <div className="flex flex-col gap-3">
             <label
               htmlFor="apiKey"
-              className="text-lg font-medium text-[#f2f2f2]"
+              className="text-md font text-[#f2f2f2]"
             >
               API Key
             </label>
@@ -77,7 +77,7 @@ export default function ApiSettingsModal() {
           <div className="flex flex-col gap-3">
             <label
               htmlFor="modelId"
-              className="text-lg font-medium text-[#f2f2f2]"
+              className="text-md text-[#f2f2f2]"
             >
               Model
             </label>

@@ -213,7 +213,7 @@ export default function CharacterModal() {
               Description
             </label>
             <textarea
-              className="w-full h-32 bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
+              className="w-full h-32 bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none h-[300px]"
               value={editableCharacter.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
             />
@@ -226,7 +226,7 @@ export default function CharacterModal() {
               Scenario
             </label>
             <textarea
-              className="w-full h-24 bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
+              className="w-full  bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none h-[200px]"
               value={editableCharacter.scenario}
               onChange={(e) => handleInputChange("scenario", e.target.value)}
             />
@@ -239,7 +239,7 @@ export default function CharacterModal() {
               First Message
             </label>
             <textarea
-              className="w-full h-32 bg-[#1616]/60 border border-none rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
+              className="w-full h-32 bg-[#1616]/60 border border-none rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none h-[300px]"
               value={editableCharacter.firstMessage}
               onChange={(e) => handleInputChange("firstMessage", e.target.value)}
             />

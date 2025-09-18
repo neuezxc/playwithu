@@ -17,9 +17,9 @@ export default function ApiSettingsModal() {
 
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4">
       {/* Modal Content */}
-      <div className="w-full max-w-2xl rounded-xl shadow-lg flex flex-col font-sans border border-white/20 bg-white/2">
+      <div className="w-full  h-full lg:h-auto max-w-2xl rounded-xl shadow-lg flex flex-col font-sans border border-white/20 bg-white/2">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 py-4 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
@@ -66,7 +66,7 @@ export default function ApiSettingsModal() {
             <input
               id="apiKey"
               type="password"
-              className="w-full h-12 px-6 bg-[#161616] rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
+              className="w-full h-12 px-6 bg-[#161616] border border-white/10 rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
               placeholder="Placeholder"
               onChange={(e) => setApiKey(e.target.value)}
               value={api_key}
@@ -84,7 +84,7 @@ export default function ApiSettingsModal() {
             <input
               id="modelId"
               type="text"
-              className="w-full h-12 px-6 bg-[#161616] rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
+              className="w-full h-12 px-6 bg-[#161616] border border-white/10 rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
               placeholder="Placeholder"
               value={model_id}
               onChange={(e) => setModelId(e.target.value)}
@@ -93,8 +93,6 @@ export default function ApiSettingsModal() {
         </main>
 
         {/* Modal Footer */}
-        <footer className="flex justify-end items-center gap-3 p-6 border-t border-[#333]">
-        </footer>
       </div>
     </div>
   );

@@ -178,12 +178,11 @@ export default function CustomPromptModal({ onClose }) {
     // Modal Overlay: Centers the modal and provides a backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 bg-opacity-50 p-4 overflow-y-auto">
       {/* Modal Content */}
-      <div className="w-full max-w-3xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-4 mx-2 border border-white/20 bg-white/2">
+      <div className="w-full h-full lg:h-auto max-w-3xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-4 mx-2 border border-white/20 bg-white/2">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-4 border-b border-[#3b3b3b]">
           <div>
             <h2 className="text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
-              <FileText size={20}  />
               Custom Prompts
             </h2>
             <p className="text-xs text-[#8e8e] mt-1">

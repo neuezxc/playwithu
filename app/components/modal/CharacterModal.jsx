@@ -113,11 +113,10 @@ export default function CharacterModal() {
       />
       
       {/* Modal Content */}
-      <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden border border-white/30 bg-white/2" >
+      <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[95vh] overflow-hidden border border-white/30 bg-white/2" >
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
-            <User />
             Character Information
           </h2>
           <div className="flex items-center gap-2">

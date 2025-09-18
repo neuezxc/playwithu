@@ -70,11 +70,10 @@ export default function MemoryModal() {
     // Modal Overlay: Centers the modal and provides a backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4">
       {/* Modal Content */}
-      <div className="w-full max-w-lg  rounded-xl shadow-lg flex flex-col font-sans border border-white/20 bg-white/3">
+      <div className="w-full max-w-lg h-full lg:h-auto  rounded-xl shadow-lg flex flex-col font-sans border border-white/20 bg-white/3">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
-            <Brain />
             Memory
           </h2>
           <div className="flex items-center gap-2">
@@ -89,15 +88,15 @@ export default function MemoryModal() {
         </header>
 
         {/* Modal Body */}
-        <main className="p-6 flex flex-col gap-5">
+        <main className="p-6 flex flex-col gap-5 flex-grow">
           {/* Textarea Group */}
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-1 flex-col gap-2.5">
             <p className="text-xs font-medium text-[#8e8e8e] tracking-[-0.2px] max-w-md">
               summarize chats - manually summarize the chats. auto summarize -
               it automatically summarize the chats every 10 messages count.
             </p>
             <textarea
-              className="w-full h-48 bg-[#5fdb72]/10  border border-[#5fdb72] rounded-md p-4 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none  transition-shadow resize-none"
+              className="w-full h-full lg:h-[300px] bg-[#5fdb72]/10  border border-[#5fdb72] rounded-md p-4 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none  transition-shadow resize-none"
               placeholder=""
               value={summarizeText}
               readOnly

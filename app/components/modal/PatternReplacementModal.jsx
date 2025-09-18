@@ -60,11 +60,10 @@ export default function PatternReplacementModal() {
     // Modal Overlay: Centers the modal and provides a backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4">
       {/* Modal Content */}
-      <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden border border-white/20 bg-white/2">
+      <div className="w-full h-full lg:h-auto max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] overflow-hidden border border-white/20 bg-white/2">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
-            <Asterisk />
             Pattern Replacement
           </h2>
           <button

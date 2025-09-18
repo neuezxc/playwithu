@@ -1,23 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, FileText, Plus, Trash2 } from "lucide-react";
+import { X, FileText, Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import usePromptStore from "../../store/usePromptStore";
 
 export default function CustomPromptModal({ onClose }) {
   const {
     system_prompt,
     custom_prompts,
+    prompt_names,
     selected_prompt_index,
     setCustomPrompts,
+    setPromptNames,
     setSelectedPromptIndex,
     addCustomPrompt,
     updateCustomPrompt,
+    updatePromptName,
     removeCustomPrompt
   } = usePromptStore();
   
  const [activeTab, setActiveTab] = useState('default');
  const [promptValues, setPromptValues] = useState(['']);
+ const [promptNames, setPromptNamesLocal] = useState([]);
+ const [isPlaceholdersCollapsed, setIsPlaceholdersCollapsed] = useState(true);
 
  // Initialize prompt values and active tab when component mounts
  useEffect(() => {
@@ -26,16 +31,26 @@ export default function CustomPromptModal({ onClose }) {
      setPromptValues([...custom_prompts]);
    }
    
+   // Update prompt names if we have persisted data
+   if (prompt_names.length > 0) {
+     setPromptNamesLocal([...prompt_names]);
+   } else {
+     // Initialize with default names
+     const defaultNames = Array(custom_prompts.length).fill('').map((_, i) => `Prompt ${i + 1}`);
+     setPromptNamesLocal(defaultNames);
+   }
+   
    // Set active tab to the selected prompt or default
    if (selected_prompt_index >= 0) {
      setActiveTab(selected_prompt_index);
    } else {
      setActiveTab('default');
    }
- }, [custom_prompts, selected_prompt_index]);
+ }, [custom_prompts, prompt_names, selected_prompt_index]);
 
   const handleSave = () => {
     setCustomPrompts(promptValues);
+    setPromptNames(promptNames);
     if (activeTab !== 'default' && activeTab < promptValues.length) {
       setSelectedPromptIndex(activeTab);
     } else {
@@ -46,14 +61,18 @@ export default function CustomPromptModal({ onClose }) {
 
   const handleReset = () => {
     setPromptValues(['']);
+    setPromptNamesLocal([]);
     setCustomPrompts([]);
+    setPromptNames([]);
     setSelectedPromptIndex(-1);
     setActiveTab('default');
   };
 
   const handleAddPrompt = () => {
     const newPromptValues = [...promptValues, ''];
+    const newPromptNames = [...promptNames, `Prompt ${promptValues.length + 1}`];
     setPromptValues(newPromptValues);
+    setPromptNamesLocal(newPromptNames);
     setActiveTab(newPromptValues.length - 1);
   };
 
@@ -61,7 +80,9 @@ export default function CustomPromptModal({ onClose }) {
     if (promptValues.length <= 1) return;
     
     const newPromptValues = promptValues.filter((_, i) => i !== index);
+    const newPromptNames = promptNames.filter((_, i) => i !== index);
     setPromptValues(newPromptValues);
+    setPromptNamesLocal(newPromptNames);
     
     // Adjust active tab if needed
     if (activeTab === index) {
@@ -75,6 +96,12 @@ export default function CustomPromptModal({ onClose }) {
     const newPromptValues = [...promptValues];
     newPromptValues[index] = value;
     setPromptValues(newPromptValues);
+  };
+
+  const handlePromptNameChange = (index, value) => {
+    const newPromptNames = [...promptNames];
+    newPromptNames[index] = value;
+    setPromptNamesLocal(newPromptNames);
   };
 
   const getActivePromptValue = () => {
@@ -111,12 +138,21 @@ export default function CustomPromptModal({ onClose }) {
     return (
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <label
-            htmlFor={`customPrompt-${activeTab}`}
-            className="text-lg font-medium text-[#f2f2f2]"
-          >
-            Prompt Template {activeTab + 1}
-          </label>
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor={`customPrompt-${activeTab}`}
+              className="text-lg font-medium text-[#f2f2f2]"
+            >
+              Prompt Template
+            </label>
+            <input
+              type="text"
+              className="w-full max-w-xs px-2 py-1 bg-[#161616] rounded text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
+              value={promptNames[activeTab] || `Prompt ${activeTab + 1}`}
+              onChange={(e) => handlePromptNameChange(activeTab, e.target.value)}
+              placeholder={`Prompt ${activeTab + 1}`}
+            />
+          </div>
           {promptValues.length > 1 && (
             <button
               onClick={() => handleRemovePrompt(activeTab)}
@@ -187,7 +223,7 @@ export default function CustomPromptModal({ onClose }) {
                   }`}
                   onClick={() => setActiveTab(index)}
                 >
-                  Prompt {index + 1}
+                  {promptNames[index] || `Prompt ${index + 1}`}
                 </button>
               </div>
             ))}
@@ -208,30 +244,43 @@ export default function CustomPromptModal({ onClose }) {
           
           {/* Placeholders Section */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-lg font-medium text-[#f2f2f2]">Available Placeholders</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{char}}"}</span>
+            <button
+              className="flex items-center gap-2 text-lg font-medium text-[#f2f2f2] hover:text-[#5fdb72] transition-colors"
+              onClick={() => setIsPlaceholdersCollapsed(!isPlaceholdersCollapsed)}
+            >
+              {isPlaceholdersCollapsed ? (
+                <ChevronRight size={20} className="text-[#5fdb72]" />
+              ) : (
+                <ChevronDown size={20} className="text-[#5fdb72]" />
+              )}
+              <span>Available Placeholders</span>
+            </button>
+            
+            {!isPlaceholdersCollapsed && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-[#1a1a1a] rounded-lg border border-[#333]">
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{char}}"}</span>
+                </div>
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{user}}"}</span>
+                </div>
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{char_description}}"}</span>
+                </div>
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{user_description}}"}</span>
+                </div>
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{scenario}}"}</span>
+                </div>
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{memory}}"}</span>
+                </div>
+                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
+                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{tools}}"}</span>
+                </div>
               </div>
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{user}}"}</span>
-              </div>
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{char_description}}"}</span>
-              </div>
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{user_description}}"}</span>
-              </div>
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{scenario}}"}</span>
-              </div>
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{memory}}"}</span>
-              </div>
-              <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                <span className="text-[#e4ffe8] font-mono text-xs">{"{{tools}}"}</span>
-              </div>
-            </div>
+            )}
           </div>
         </main>
         

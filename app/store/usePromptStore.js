@@ -36,13 +36,18 @@ const usePromptStore = create(
   persist((set, get) => ({
     system_prompt: DEFAULT_SYSTEM_PROMPT,
     custom_prompts: [],
+    prompt_names: [],
     selected_prompt_index: -1,
     setSystemPrompt: (prompt) => set({ system_prompt: prompt }),
     setCustomPrompts: (prompts) => set({ custom_prompts: prompts }),
+    setPromptNames: (names) => set({ prompt_names: names }),
     setSelectedPromptIndex: (index) => set({ selected_prompt_index: index }),
-    addCustomPrompt: (prompt) => {
-      const { custom_prompts } = get();
-      set({ custom_prompts: [...custom_prompts, prompt] });
+    addCustomPrompt: (prompt, name = '') => {
+      const { custom_prompts, prompt_names } = get();
+      set({
+        custom_prompts: [...custom_prompts, prompt],
+        prompt_names: [...prompt_names, name]
+      });
     },
     updateCustomPrompt: (index, prompt) => {
       const { custom_prompts } = get();
@@ -50,12 +55,23 @@ const usePromptStore = create(
       updatedPrompts[index] = prompt;
       set({ custom_prompts: updatedPrompts });
     },
+    updatePromptName: (index, name) => {
+      const { prompt_names } = get();
+      const updatedNames = [...prompt_names];
+      updatedNames[index] = name;
+      set({ prompt_names: updatedNames });
+    },
     removeCustomPrompt: (index) => {
-      const { custom_prompts, selected_prompt_index } = get();
+      const { custom_prompts, prompt_names, selected_prompt_index } = get();
       const updatedPrompts = custom_prompts.filter((_, i) => i !== index);
+      const updatedNames = prompt_names.filter((_, i) => i !== index);
       // If we're removing the selected prompt, reset selection
       const newSelectedIndex = index === selected_prompt_index ? -1 : selected_prompt_index;
-      set({ custom_prompts: updatedPrompts, selected_prompt_index: newSelectedIndex });
+      set({
+        custom_prompts: updatedPrompts,
+        prompt_names: updatedNames,
+        selected_prompt_index: newSelectedIndex
+      });
     },
     getEffectivePrompt: () => {
       const { custom_prompts, selected_prompt_index, system_prompt } = get();

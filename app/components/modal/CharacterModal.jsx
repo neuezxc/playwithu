@@ -1,9 +1,9 @@
 'use client'
-import React, { useState, useRef } from "react";
-import { X, User, Image, FileText, MessageSquare, Upload, Download } from "lucide-react";
+import React, { useState } from "react";
+import { X, User, Image, FileText, MessageSquare } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
 
-export default function CharacterModal({ character: editingCharacter }) {
+export default function CharacterModal({ character: editingCharacter, prefillActive = true }) {
   const { character: activeCharacter, characters, isCharacterModalOpen, patternReplacementSettings } = useCharacterStore();
   const setCharacterModal = useCharacterStore((state) => state.setCharacterModal);
   const setCharacter = useCharacterStore((state) => state.setCharacter);
@@ -12,17 +12,14 @@ export default function CharacterModal({ character: editingCharacter }) {
   const addCharacter = useCharacterStore((state) => state.addCharacter);
   const updateCharacter = useCharacterStore((state) => state.updateCharacter);
 
-  // Ref for hidden file input
-  const fileInputRef = useRef(null);
-
   // Local state for editing character details
   const [editableCharacter, setEditableCharacter] = useState({
-    name: editingCharacter?.name || activeCharacter?.name || "",
-    avatarURL: editingCharacter?.avatarURL || activeCharacter?.avatarURL || "",
-    bio: editingCharacter?.bio || activeCharacter?.bio || "",
-    description: editingCharacter?.description || activeCharacter?.description || "",
-    scenario: editingCharacter?.scenario || activeCharacter?.scenario || "",
-    firstMessage: editingCharacter?.firstMessage || activeCharacter?.firstMessage || "",
+    name: editingCharacter?.name || (prefillActive ? activeCharacter?.name || "" : ""),
+    avatarURL: editingCharacter?.avatarURL || (prefillActive ? activeCharacter?.avatarURL || "" : ""),
+    bio: editingCharacter?.bio || (prefillActive ? activeCharacter?.bio || "" : ""),
+    description: editingCharacter?.description || (prefillActive ? activeCharacter?.description || "" : ""),
+    scenario: editingCharacter?.scenario || (prefillActive ? activeCharacter?.scenario || "" : ""),
+    firstMessage: editingCharacter?.firstMessage || (prefillActive ? activeCharacter?.firstMessage || "" : ""),
   });
 
   // Handle input changes
@@ -41,7 +38,7 @@ export default function CharacterModal({ character: editingCharacter }) {
         ...editingCharacter,
         ...editableCharacter,
       });
-    } else {
+    } else if (prefillActive) {
       // Update active character (when editing from SuperInput)
       setCharacter({
         ...activeCharacter,
@@ -52,6 +49,12 @@ export default function CharacterModal({ character: editingCharacter }) {
       updateCharacter({
         ...activeCharacter,
         ...editableCharacter,
+      });
+    } else {
+      // Create new character (when creating from character manager)
+      addCharacter({
+        ...editableCharacter,
+        messages: [],
       });
     }
     setCharacterModal(false);
@@ -69,7 +72,7 @@ export default function CharacterModal({ character: editingCharacter }) {
         scenario: editingCharacter.scenario || "",
         firstMessage: editingCharacter.firstMessage || "",
       });
-    } else if (activeCharacter) {
+    } else if (prefillActive && activeCharacter) {
       setEditableCharacter({
         name: activeCharacter.name || "",
         avatarURL: activeCharacter.avatarURL || "",
@@ -91,102 +94,20 @@ export default function CharacterModal({ character: editingCharacter }) {
     setCharacterModal(false);
   };
 
-  // Export character data as JSON file
-  const handleExport = () => {
-    // Combine character data with pattern replacement settings
-    const exportData = {
-      ...editableCharacter,
-      patternReplacementSettings: patternReplacementSettings
-    };
-    
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `${editableCharacter.name || 'character'}_data.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
-  // Trigger file input click
-  const handleImportClick = () => {
-    fileInputRef.current.click();
-  };
-
-  // Handle file import
-  const handleImport = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedData = JSON.parse(e.target.result);
-        
-        // Update editable character with imported data
-        setEditableCharacter({
-          name: importedData.name || "",
-          avatarURL: importedData.avatarURL || "",
-          bio: importedData.bio || "",
-          description: importedData.description || "",
-          scenario: importedData.scenario || "",
-          firstMessage: importedData.firstMessage || "",
-        });
-        
-        // Update pattern replacement settings if they exist in the imported data
-        if (importedData.patternReplacementSettings) {
-          setPatternReplacementSettings(importedData.patternReplacementSettings);
-        }
-      } catch (error) {
-        console.error("Error parsing imported file:", error);
-        alert("Error importing file. Please make sure it's a valid JSON file.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
   if (!isCharacterModalOpen) return null;
 
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4 ">
-      {/* Hidden file input for import */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleImport}
-        accept=".json"
-        className="hidden"
-      />
       
       {/* Modal Content */}
       <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[95vh] overflow-hidden border border-white/30 bg-white/2" >
         {/* Modal Header */}
         <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
           <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
-            Character Information
+            {editingCharacter ? "Edit Character" : "Create Character"}
           </h2>
           <div className="flex items-center gap-2">
-            {/* Import Button */}
-            <button
-              onClick={handleImportClick}
-              className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
-              aria-label="Import character"
-            >
-              <Upload size={16} className="text-[#9F9F]" />
-            </button>
-            
-            {/* Export Button */}
-            <button
-              onClick={handleExport}
-              className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
-              aria-label="Export character"
-            >
-              <Download size={16} className="text-[#9F9F9F]" />
-            </button>
-            
             <button
               onClick={handleClose}
               className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"

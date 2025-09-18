@@ -208,7 +208,7 @@ export default function SuperInput() {
       </div>
 
       {/* Character Modal */}
-      {isCharacterModalOpen && <CharacterModal />}
+      {isCharacterModalOpen && <CharacterModal prefillActive={true} />}
       
       
       {/* Pattern Replacement Modal */}

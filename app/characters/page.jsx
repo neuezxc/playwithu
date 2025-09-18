@@ -138,7 +138,7 @@ export default function CharacterManager() {
       </div>
       
       {/* Character Modal */}
-      {isCharacterModalOpen && <CharacterModal character={editingCharacter} />}
+      {isCharacterModalOpen && <CharacterModal character={editingCharacter} prefillActive={false} />}
     </div>
   );
 }

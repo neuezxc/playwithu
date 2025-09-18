@@ -4,10 +4,11 @@ import { X, User, Image, FileText, MessageSquare, Upload, Download } from "lucid
 import useCharacterStore from "@/app/store/useCharacterStore";
 
 export default function CharacterModal() {
-  const { character, isCharacterModalOpen } = useCharacterStore();
+  const { character, isCharacterModalOpen, patternReplacementSettings } = useCharacterStore();
   const setCharacterModal = useCharacterStore((state) => state.setCharacterModal);
   const setCharacter = useCharacterStore((state) => state.setCharacter);
   const resetMessage = useCharacterStore((state) => state.resetMessage);
+  const setPatternReplacementSettings = useCharacterStore((state) => state.setPatternReplacementSettings);
 
   // Ref for hidden file input
   const fileInputRef = useRef(null);
@@ -55,7 +56,13 @@ export default function CharacterModal() {
 
   // Export character data as JSON file
   const handleExport = () => {
-    const dataStr = JSON.stringify(editableCharacter, null, 2);
+    // Combine character data with pattern replacement settings
+    const exportData = {
+      ...editableCharacter,
+      patternReplacementSettings: patternReplacementSettings
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
     const exportFileDefaultName = `${editableCharacter.name || 'character'}_data.json`;
@@ -90,6 +97,11 @@ export default function CharacterModal() {
           scenario: importedData.scenario || "",
           firstMessage: importedData.firstMessage || "",
         });
+        
+        // Update pattern replacement settings if they exist in the imported data
+        if (importedData.patternReplacementSettings) {
+          setPatternReplacementSettings(importedData.patternReplacementSettings);
+        }
       } catch (error) {
         console.error("Error parsing imported file:", error);
         alert("Error importing file. Please make sure it's a valid JSON file.");

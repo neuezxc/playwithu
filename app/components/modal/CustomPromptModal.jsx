@@ -29,6 +29,9 @@ export default function CustomPromptModal({ onClose }) {
    // Update prompt values if we have persisted data
    if (custom_prompts.length > 0) {
      setPromptValues([...custom_prompts]);
+   } else {
+     // Initialize with at least one empty prompt if none exist
+     setPromptValues(['']);
    }
    
    // Update prompt names if we have persisted data
@@ -36,21 +39,20 @@ export default function CustomPromptModal({ onClose }) {
      setPromptNamesLocal([...prompt_names]);
    } else {
      // Initialize with default names
-     const defaultNames = Array(custom_prompts.length).fill('').map((_, i) => `Prompt ${i + 1}`);
+     const defaultNames = Array(Math.max(1, custom_prompts.length)).fill('').map((_, i) => `Prompt ${i + 1}`);
      setPromptNamesLocal(defaultNames);
    }
    
    // Set active tab to the selected prompt or default
-   if (selected_prompt_index >= 0) {
+   if (selected_prompt_index >= 0 && selected_prompt_index < custom_prompts.length) {
      setActiveTab(selected_prompt_index);
    } else {
      setActiveTab('default');
    }
- }, [custom_prompts, prompt_names, selected_prompt_index]);
+ }, []); // Empty dependency array means this effect runs only once when the component mounts
 
   const handleSave = () => {
-    setCustomPrompts(promptValues);
-    setPromptNames(promptNames);
+    // The store is already updated in real-time, so we just need to set the selected prompt index
     if (activeTab !== 'default' && activeTab < promptValues.length) {
       setSelectedPromptIndex(activeTab);
     } else {
@@ -62,6 +64,7 @@ export default function CustomPromptModal({ onClose }) {
   const handleReset = () => {
     setPromptValues(['']);
     setPromptNamesLocal([]);
+    // Reset the store
     setCustomPrompts([]);
     setPromptNames([]);
     setSelectedPromptIndex(-1);
@@ -73,6 +76,9 @@ export default function CustomPromptModal({ onClose }) {
     const newPromptNames = [...promptNames, `Prompt ${promptValues.length + 1}`];
     setPromptValues(newPromptValues);
     setPromptNamesLocal(newPromptNames);
+    // Immediately update the store to persist the new prompt
+    setCustomPrompts(newPromptValues);
+    setPromptNames(newPromptNames);
     setActiveTab(newPromptValues.length - 1);
   };
 
@@ -83,6 +89,9 @@ export default function CustomPromptModal({ onClose }) {
     const newPromptNames = promptNames.filter((_, i) => i !== index);
     setPromptValues(newPromptValues);
     setPromptNamesLocal(newPromptNames);
+    // Immediately update the store to persist the removal
+    setCustomPrompts(newPromptValues);
+    setPromptNames(newPromptNames);
     
     // Adjust active tab if needed
     if (activeTab === index) {
@@ -96,12 +105,16 @@ export default function CustomPromptModal({ onClose }) {
     const newPromptValues = [...promptValues];
     newPromptValues[index] = value;
     setPromptValues(newPromptValues);
+    // Immediately update the store to persist the change
+    setCustomPrompts(newPromptValues);
   };
 
   const handlePromptNameChange = (index, value) => {
     const newPromptNames = [...promptNames];
     newPromptNames[index] = value;
     setPromptNamesLocal(newPromptNames);
+    // Immediately update the store to persist the name change
+    setPromptNames(newPromptNames);
   };
 
   const getActivePromptValue = () => {

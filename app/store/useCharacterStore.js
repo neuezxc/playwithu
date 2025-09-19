@@ -357,8 +357,31 @@ You dummy!
             (char) => char.id === characterId
           );
           if (selectedCharacter) {
+            // Initialize messages for the selected character
+            const system_prompt = usePromptStore.getState().system_prompt;
+            const processedPrompt = replacerTemplate(
+              system_prompt,
+              selectedCharacter,
+              useUserStore.getState().user
+            );
+
+            const newMessages = [
+              {
+                role: "system",
+                content: processedPrompt,
+              },
+              {
+                role: "assistant",
+                content: selectedCharacter.firstMessage,
+              },
+            ];
+
             return {
-              character: selectedCharacter,
+              character: {
+                ...selectedCharacter,
+                messages: newMessages,
+              },
+              isInitialized: true,
             };
           }
           return state;

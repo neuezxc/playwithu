@@ -9,9 +9,11 @@ const useMemoryStore = create(
       
       modal: false,
       active: false,
+      loading: false,
       setSummarizeText: (text) => set({ summarizeText: text }),
       setModal: (modal) => set({ modal: modal }),
       setActive: (active) => set({ active: active }),
+      setLoading: (loading) => set({ loading: loading }),
 
     }),
     {

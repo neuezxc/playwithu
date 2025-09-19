@@ -14,6 +14,8 @@ export default function MemoryModal() {
   const { character } = useCharacterStore();
   const setSummarizeText = useMemoryStore((state) => state.setSummarizeText);
   const { summarizeText } = useMemoryStore();
+  const setLoading = useMemoryStore((state) => state.setLoading);
+  const { loading } = useMemoryStore();
   const updateSystemPrompt = useCharacterStore(
     (state) => state.updateSystemPrompt
   );
@@ -22,7 +24,8 @@ export default function MemoryModal() {
   const setActive = useMemoryStore((state) => state.setActive);
 
 
-  const handleSummarize = async () => {
+ const handleSummarize = async () => {
+    setLoading(true);
     const formattedOutput = character.messages
       .filter((msg) => msg.role !== "system")
       .map((msg) => `${msg.role}: ${msg.content}`)
@@ -57,6 +60,8 @@ export default function MemoryModal() {
       setSummarizeText(text);
     } catch (error) {
       console.error("Error sending message:", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,21 +100,42 @@ export default function MemoryModal() {
               summarize chats - manually summarize the chats. auto summarize -
               it automatically summarize the chats every 10 messages count.
             </p>
-            <textarea
-              className="w-full h-full lg:h-[300px] bg-[#5fdb72]/10  border border-[#5fdb72] rounded-md p-4 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none  transition-shadow resize-none"
-              placeholder=""
-              value={summarizeText}
-              readOnly
-            />
+            {loading ? (
+              <div className="w-full h-full lg:h-[300px] bg-[#5fdb72]/10 border border-[#5fdb72] rounded-md p-4 flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 border-4 border-[#5fdb72] border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-[#e4ffe8] text-sm">Summarizing chats...</p>
+                </div>
+              </div>
+            ) : (
+              <textarea
+                className="w-full h-full lg:h-[300px] bg-[#5fdb72]/10  border border-[#5fdb72] rounded-md p-4 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none  transition-shadow resize-none"
+                placeholder=""
+                value={summarizeText}
+                readOnly
+              />
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap flex-row items-center gap-4">
             <button
               onClick={handleSummarize}
-              className="flex-1 whitespace-nowrap px-4 py-2 bg-[#5fdb72]/15 border border-[#5fdb72] rounded-lg text-[#e4ffe8] text-sm font-medium hover:bg-[#5fdb72]/25 transition-colors"
+              disabled={loading}
+              className={`flex-1 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                loading
+                  ? "bg-[#5fdb72]/10 border border-[#5fdb72] text-[#e4ffe8]/50 cursor-not-allowed"
+                  : "bg-[#5fdb72]/15 border border-[#5fdb72] text-[#e4ffe8] hover:bg-[#5fdb72]/25"
+              }`}
             >
-              Summarize Chats
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-[#e4ffe8] border-t-transparent rounded-full animate-spin"></div>
+                  Summarizing...
+                </div>
+              ) : (
+                "Summarize Chats"
+              )}
             </button>
             <button className="flex-1 whitespace-nowrap px-4 py-2 bg-[#454545]/30 border border-[#454545] rounded-lg text-[#e8e8e8] text-sm font-medium hover:bg-[#454545]/60 transition-colors">
               Auto Summarize

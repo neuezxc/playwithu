@@ -11,6 +11,7 @@ import {
   Braces,
   Asterisk,
   Regex,
+  Cable,
   Bug,
 } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
@@ -49,6 +50,14 @@ export default function InputMenu({
   }, []);
 
   const menuItems = [
+    {
+      icon: <Cable size={18} />,
+      label: "API Settings",
+      onClick: () => {
+        setModal(true);
+        setIsOpen(false);
+      },
+    },
     {
       icon: <Braces size={18} />,
       label: "Custom Prompt",

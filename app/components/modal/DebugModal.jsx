@@ -21,9 +21,9 @@ export default function DebugModal({ onClose }) {
 
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 bg-opacity-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 bg-opacity-50 p-2 sm:p-4 overflow-y-auto">
       {/* Modal Content */}
-      <div className="w-full h-full lg:h-auto max-w-4xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-4 mx-2 border border-white/20 bg-white/2">
+      <div className="w-full h-full lg:h-auto max-w-4xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-2 sm:my-4 mx-1 sm:mx-2 border border-white/20 bg-white/2">
         {/* Modal Header */}
         <header className="flex items-center justify-between p-4 border-b border-[#3b3b3b]">
           <div>
@@ -44,9 +44,9 @@ export default function DebugModal({ onClose }) {
         </header>
         
         {/* Filter Controls */}
-        <div className="px-4 py-2 border-b border-[#3b3b3b] flex gap-2 items-center">
+        <div className="px-4 py-2 border-b border-[#3b3b3b] flex flex-wrap gap-2 items-center">
           <button
-            className={`px-3 py-1 text-xs font-medium rounded-lg ${
+            className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-lg ${
               filter === "all"
                 ? "bg-[#5fdb72]/15 text-[#e4ffe8] border border-[#5fdb72]"
                 : "text-[#d9d9d9] hover:text-white hover:bg-[#333]/50"
@@ -66,7 +66,7 @@ export default function DebugModal({ onClose }) {
             API Requests
           </button>
           <button
-            className={`ml-auto px-3 py-1 text-xs font-medium flex items-center gap-1 ${
+            className={`ml-auto px-2 sm:px-3 py-1 text-xs font-medium flex items-center gap-1 ${
               isEnabled
                 ? "text-green-400 hover:text-green-300"
                 : "text-red-400 hover:text-red-300"
@@ -77,7 +77,7 @@ export default function DebugModal({ onClose }) {
             {isEnabled ? "Enabled" : "Disabled"}
           </button>
           <button
-            className="px-3 py-1 text-xs font-medium text-red-400 hover:text-red-300 flex items-center gap-1"
+            className="px-2 sm:px-3 py-1 text-xs font-medium text-red-400 hover:text-red-300 flex items-center gap-1"
             onClick={clearLogs}
           >
             <Trash2 size={14} />
@@ -160,7 +160,7 @@ export default function DebugModal({ onClose }) {
         </main>
         
         {/* Modal Footer */}
-        <footer className="flex justify-between items-center gap-3 p-4 border-t border-[#333]">
+        <footer className="flex flex-col sm:flex-row justify-between items-center gap-3 p-4 border-t border-[#333]">
           <div className="text-xs text-[#8e8e]">
             Total logs: {logs.length}
           </div>

@@ -6,7 +6,7 @@ const useDebugStore = create(
     (set, get) => ({
       logs: [],
       isModalOpen: false,
-      isEnabled: true,
+      isEnabled: false,
       
       // Add a new log entry
       addLog: (log) => set((state) => {

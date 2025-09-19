@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import usePromptStore from "./usePromptStore";
 import useUserStore from "./useUserStore";
 import useApiSettingStore from "./useApiSettingStore";
+import useDebugStore from "./useDebugStore";
 
 const replacerTemplate = (template, character, user) => {
   // Get pattern replacement settings from store
@@ -240,48 +241,87 @@ You dummy!
         try {
           // Get the current messages (up to and including the edited user message)
           const currentMessages = get().character.messages;
+          
+          // Get debug store
+          const { addLog } = useDebugStore.getState();
 
-          // Make API call to regenerate the character's response
-          const response = await fetch(
-            "https://openrouter.ai/api/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${api_key}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
+          // Log the request
+          addLog({
+            type: "api",
+            endpoint: "https://openrouter.ai/api/v1/chat/completions",
+            request: {
+              model: model_id,
+              messages: currentMessages,
+            }
+          });
+
+          try {
+            // Make API call to regenerate the character's response
+            const response = await fetch(
+              "https://openrouter.ai/api/v1/chat/completions",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${api_key}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: model_id,
+                  messages: currentMessages,
+                }),
+              }
+            );
+
+            const data = await response.json();
+
+            // Log the response
+            addLog({
+              type: "api",
+              endpoint: "https://openrouter.ai/api/v1/chat/completions",
+              response: data,
+              request: {
                 model: model_id,
                 messages: currentMessages,
-              }),
+              }
+            });
+
+            // Error handling for API response
+            if (!response.ok) {
+              throw new Error(data.error?.message || "API request failed");
             }
-          );
+            if (!data.choices || data.choices.length === 0) {
+              throw new Error("No choices returned from API");
+            }
 
-          const data = await response.json();
+            const text = data.choices[0].message.content;
 
-          // Error handling for API response
-          if (!response.ok) {
-            throw new Error(data.error?.message || "API request failed");
+            // Add the character's new response
+            set((state) => ({
+              character: {
+                ...state.character,
+                messages: [
+                  ...state.character.messages,
+                  {
+                    role: "assistant",
+                    content: text,
+                  },
+                ],
+              },
+            }));
+          } catch (error) {
+            // Log the error
+            addLog({
+              type: "api",
+              endpoint: "https://openrouter.ai/api/v1/chat/completions",
+              error: error.message,
+              request: {
+                model: model_id,
+                messages: currentMessages,
+              }
+            });
+            
+            throw error;
           }
-          if (!data.choices || data.choices.length === 0) {
-            throw new Error("No choices returned from API");
-          }
-
-          const text = data.choices[0].message.content;
-
-          // Add the character's new response
-          set((state) => ({
-            character: {
-              ...state.character,
-              messages: [
-                ...state.character.messages,
-                {
-                  role: "assistant",
-                  content: text,
-                },
-              ],
-            },
-          }));
         } catch (error) {
           console.error(
             "Error regenerating character response:",

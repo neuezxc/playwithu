@@ -6,10 +6,11 @@ import useCharacterStore from "./store/useCharacterStore";
 import useChatStore from "./store/useChatStore";
 import useMemoryStore from "./store/useMemoryStore";
 import usePromptStore from "./store/usePromptStore";
+import useDebugStore from "./store/useDebugStore";
 
 import { SuperInput } from "./components";
 import { ChatList } from "./components";
-import { ApiSettingsModal, MemoryModal } from "./components";
+import { ApiSettingsModal, MemoryModal, DebugModal } from "./components";
 
 export default function Home() {
   const isApiSettingsModalOpen = useApiSettingStore((state) => state.modal);
@@ -48,6 +49,7 @@ export default function Home() {
       <SuperInput />
       {isMemoryModalOpen && <MemoryModal />}
       {isApiSettingsModalOpen && <ApiSettingsModal />}
+      {useDebugStore.getState().isModalOpen && <DebugModal />}
     </div>
   );
 }

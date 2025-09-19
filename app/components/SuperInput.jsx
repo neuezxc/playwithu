@@ -1,15 +1,18 @@
 "use client";
 
-import { Settings2, CodeXml, ArrowUp, Brain, User, FileText, Image, Braces, Asterisk  } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
 import useMemoryStore from "../store/useMemoryStore";
 import usePromptStore from "../store/usePromptStore";
+import useDebugStore from "../store/useDebugStore";
 import { replacePlaceholders } from "../utils/replacerTemplate";
 import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
+import DebugModal from "./modal/DebugModal";
+import InputMenu from "./InputMenu";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -27,6 +30,7 @@ export default function SuperInput() {
   const setActive = useMemoryStore((state) => state.setActive);
   const setLoading = useCharacterStore((state) => state.setLoading);
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const setPatternReplacementModal = useCharacterStore((state) => state.setPatternReplacementModal);
   const router = useRouter();
 
@@ -42,6 +46,10 @@ export default function SuperInput() {
         console.log("Conversation reset");
       } else if (command === "/characters") {
         router.push("/characters");
+        setUser({ ...user, message: "" });
+        return;
+      } else if (command === "/dbg") {
+        setIsDebugModalOpen(true);
         setUser({ ...user, message: "" });
         return;
       }
@@ -95,43 +103,82 @@ export default function SuperInput() {
         return message;
       });
 
-      const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${api_key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: model_id,
-            messages: messagesWithPrompt, // Use the messages array with the processed prompt
-          }),
+      // Get debug store
+      const { addLog } = useDebugStore.getState();
+
+      // Log the request
+      addLog({
+        type: "api",
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        request: {
+          model: model_id,
+          messages: messagesWithPrompt,
         }
-      );
-
-      const data = await response.json();
-
-      // Error handling for API response
-      if (!response.ok) {
-        throw new Error(data.error?.message || "API request failed");
-      }
-      if (!data.choices || data.choices.length === 0) {
-        throw new Error("No choices returned from API");
-      }
-
-      const text = data.choices[0].message.content;
-
-      setCharacter({
-        ...character,
-        messages: [
-          ...messagesWithPrompt, // Use the messagesWithPrompt array that includes the updated system prompt
-          {
-            role: "assistant",
-            content: text,
-          },
-        ],
       });
+
+      try {
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${api_key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: model_id,
+              messages: messagesWithPrompt, // Use the messages array with the processed prompt
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        // Log the response
+        addLog({
+          type: "api",
+          endpoint: "https://openrouter.ai/api/v1/chat/completions",
+          response: data,
+          request: {
+            model: model_id,
+            messages: messagesWithPrompt,
+          }
+        });
+
+        // Error handling for API response
+        if (!response.ok) {
+          throw new Error(data.error?.message || "API request failed");
+        }
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error("No choices returned from API");
+        }
+
+        const text = data.choices[0].message.content;
+
+        setCharacter({
+          ...character,
+          messages: [
+            ...messagesWithPrompt, // Use the messagesWithPrompt array that includes the updated system prompt
+            {
+              role: "assistant",
+              content: text,
+            },
+          ],
+        });
+      } catch (error) {
+        // Log the error
+        addLog({
+          type: "api",
+          endpoint: "https://openrouter.ai/api/v1/chat/completions",
+          error: error.message,
+          request: {
+            model: model_id,
+            messages: messagesWithPrompt,
+          }
+        });
+        
+        throw error;
+      }
     } catch (error) {
       console.error("Error sending message:", error.message);
       // You might want to revert the user message or show an error to the user
@@ -154,7 +201,7 @@ export default function SuperInput() {
 
   return (
     <footer className="flex flex-col items-center w-full lg:p-4">
-      <div className="w-full max-w-xl bg-[#212121] border border-[#282828] lg:rounded-2xl rounded-t-2xl p-4 flex flex-col gap-3">
+      <div className="w-full max-w-xl bg-[#212121]/80 border border-[#282828] lg:rounded-2xl rounded-t-2xl p-4 flex flex-col gap-3">
         <textarea
           className="w-full bg-transparent text-[#CDCDCD] text-base placeholder:text-[#A2A2A2] resize-none outline-none h-[40px] lg:h-[auto]"
           placeholder="Enter to send chat + Enter for linebreak."
@@ -165,30 +212,10 @@ export default function SuperInput() {
         ></textarea>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setModal(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
-            >
-              <Settings2 size={16} />
-            </button>
-            <button
-              onClick={() => setIsCustomPromptOpen(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
-            >
-              <Braces size={18}/>
-            </button>
-            <button
-              onClick={() => setModalMemory(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all "
-            >
-              <Brain size={18} />
-            </button>
-            <button
-              onClick={() => setPatternReplacementModal(true)}
-              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
-            >
-              <Asterisk />
-            </button>
+            <InputMenu
+              setIsCustomPromptOpen={setIsCustomPromptOpen}
+              setIsDebugModalOpen={setIsDebugModalOpen}
+            />
             <button
               onClick={() => setCharacterModal(true)}
               className="flex items-center justify-center px-3 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
@@ -216,6 +243,9 @@ export default function SuperInput() {
       
       {/* Custom Prompt Modal */}
       {isCustomPromptOpen && <CustomPromptModal onClose={() => setIsCustomPromptOpen(false)} />}
+      
+      {/* Debug Modal */}
+      {isDebugModalOpen && <DebugModal onClose={() => setIsDebugModalOpen(false)} />}
 
       {/* Disclaimer */}
       <p className="mt-2 text-xs font-normal text-[#656565] hidden">

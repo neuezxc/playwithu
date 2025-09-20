@@ -214,7 +214,7 @@ You dummy!
       // Edit a user message and regenerate the character's response
       editUserMessageAndRegenerate: async (index, newContent) => {
         // Get required stores
-        const { api_key, model_id } = useApiSettingStore.getState();
+        const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
         const { setLoading } = get();
 
         // Update the user message
@@ -268,6 +268,11 @@ You dummy!
                 body: JSON.stringify({
                   model: model_id,
                   messages: currentMessages,
+                  temperature: temperature,
+                  max_tokens: max_tokens,
+                  top_p: top_p,
+                  frequency_penalty: frequency_penalty,
+                  presence_penalty: presence_penalty,
                 }),
               }
             );

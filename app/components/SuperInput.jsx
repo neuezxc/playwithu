@@ -17,7 +17,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SuperInput() {
- const { api_key, model_id } = useApiSettingStore();
+ const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
   const setModalMemory = useMemoryStore((state) => state.setModal);
   const { character, isCharacterModalOpen } = useCharacterStore();
@@ -128,6 +128,11 @@ export default function SuperInput() {
             body: JSON.stringify({
               model: model_id,
               messages: messagesWithPrompt, // Use the messages array with the processed prompt
+              temperature: temperature,
+              max_tokens: max_tokens,
+              top_p: top_p,
+              frequency_penalty: frequency_penalty,
+              presence_penalty: presence_penalty,
             }),
           }
         );
@@ -197,7 +202,7 @@ export default function SuperInput() {
       e.preventDefault();
       handleMessage();
     }
-  };
+ };
 
   return (
     <footer className="flex flex-col items-center w-full lg:p-4">

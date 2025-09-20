@@ -8,7 +8,7 @@ import useCharacterStore from "@/app/store/useCharacterStore";
 import usePromptStore from "@/app/store/usePromptStore";
 
 export default function MemoryModal() {
-  const { api_key, model_id } = useApiSettingStore();
+  const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
   const setModal = useMemoryStore((state) => state.setModal);
   const { prompts } = useMemoryStore();
   const { character } = useCharacterStore();
@@ -53,6 +53,11 @@ export default function MemoryModal() {
                 content: formattedOutput,
               },
             ], // Use the updated messages array
+            temperature: temperature,
+            max_tokens: max_tokens,
+            top_p: top_p,
+            frequency_penalty: frequency_penalty,
+            presence_penalty: presence_penalty,
           }),
         }
       );
@@ -150,7 +155,7 @@ export default function MemoryModal() {
               disabled={loading}
               className={`flex-1 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 loading
-                  ? "bg-[#ff4d4d]/10 border border-[#ff4d4d] text-[#ff9999]/50 cursor-not-allowed"
+                  ? "bg-[#ff4d4d]/10 border border-[#ff4d4d] text-[#ff999]/50 cursor-not-allowed"
                   : "bg-[#ff4d4d]/15 border border-[#ff4d4d] text-[#ff9999] hover:bg-[#ff4d4d]/25"
               }`}
             >

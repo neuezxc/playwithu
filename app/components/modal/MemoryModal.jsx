@@ -22,6 +22,7 @@ export default function MemoryModal() {
   const { system_prompt } = usePromptStore();
   const { active } = useMemoryStore();
   const setActive = useMemoryStore((state) => state.setActive);
+  const resetMemory = useMemoryStore((state) => state.reset);
 
 
  const handleSummarize = async () => {
@@ -70,6 +71,10 @@ export default function MemoryModal() {
     updateSystemPrompt(system_prompt.replace("{{memory}}", summarizeText));
     setActive(true);
     setModal(false);
+  };
+
+  const handleReset = () => {
+    resetMemory();
   };
   return (
     // Modal Overlay: Centers the modal and provides a backdrop
@@ -141,10 +146,21 @@ export default function MemoryModal() {
               Auto Summarize
             </button>
             <button
+              onClick={handleReset}
+              disabled={loading}
+              className={`flex-1 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                loading
+                  ? "bg-[#ff4d4d]/10 border border-[#ff4d4d] text-[#ff9999]/50 cursor-not-allowed"
+                  : "bg-[#ff4d4d]/15 border border-[#ff4d4d] text-[#ff9999] hover:bg-[#ff4d4d]/25"
+              }`}
+            >
+              Reset
+            </button>
+            <button
               className="flex items-center justify-center h-full hidden"
               aria-label="Edit preview mode"
             >
-              <Pencil size={16} className="text-[#9F9F9F]" />
+              <Pencil size={16} className="text-[#9F9F]" />
             </button>
           </div>
         </main>

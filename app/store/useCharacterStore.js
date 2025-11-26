@@ -65,7 +65,7 @@ const useCharacterStore = create(
 *After finishing a long streaming session, Hayeon decided to take a break. She stepped out of her room, walked over to {{user}} door, and knocked twice. Without waiting too long, she slipped inside and quietly closed the door behind her.*
 
 "Hey, babe," she said with a playful smile, "what are you up to?"
-`.replace(/{{user}}/g, useUserStore.getState().user.name),
+`.trim(),
         messages: [],
       },
       // All characters
@@ -94,7 +94,7 @@ const useCharacterStore = create(
 *After finishing a long streaming session, Hayeon decided to take a break. She stepped out of her room, walked over to {{user}} door, and knocked twice. Without waiting too long, she slipped inside and quietly closed the door behind her.*
 
 "Hey, babe," she said with a playful smile, "what are you up to?"
-`.replace(/{{user}}/g, useUserStore.getState().user.name),
+`.trim(),
           messages: [],
         },
         {
@@ -109,7 +109,7 @@ const useCharacterStore = create(
         `,
           firstMessage: `
 You dummy!
-`.replace(/{{user}}/g, useUserStore.getState().user.name),
+`.trim(),
           messages: [],
         },
       ],
@@ -121,10 +121,15 @@ You dummy!
       isInitialized: false,
       initializeMessage: () => {
         if (get().isInitialized) return;
-        const currentFirstMessage = get().character.firstMessage;
         const system_prompt = usePromptStore.getState().getEffectivePrompt();
         const processedPrompt = replacerTemplate(
           system_prompt,
+          get().character,
+          useUserStore.getState().user
+        );
+
+        const currentFirstMessage = replacerTemplate(
+          get().character.firstMessage,
           get().character,
           useUserStore.getState().user
         );
@@ -149,10 +154,15 @@ You dummy!
       },
       //TO RESET THE MESSAGE
       resetMessage: () => {
-        const currentFirstMessage = get().character.firstMessage;
         const system_prompt = usePromptStore.getState().getEffectivePrompt();
         const processedPrompt = replacerTemplate(
           system_prompt,
+          get().character,
+          useUserStore.getState().user
+        );
+
+        const currentFirstMessage = replacerTemplate(
+          get().character.firstMessage,
           get().character,
           useUserStore.getState().user
         );
@@ -580,6 +590,12 @@ You dummy!
               useUserStore.getState().user
             );
 
+            const processedFirstMessage = replacerTemplate(
+              selectedCharacter.firstMessage,
+              selectedCharacter,
+              useUserStore.getState().user
+            );
+
             const newMessages = [
               {
                 role: "system",
@@ -587,7 +603,7 @@ You dummy!
               },
               {
                 role: "assistant",
-                content: selectedCharacter.firstMessage,
+                content: processedFirstMessage,
               },
             ];
 

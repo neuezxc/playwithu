@@ -273,6 +273,8 @@ export default function PatternReplacementModal() {
                   />
                   <div className="text-xs text-[#666]">
                     Use <code className="bg-[#333] px-1 rounded text-[#aaa]">{`{{tools}}`}</code> to insert the prompt value below.
+
+
                   </div>
                 </div>
 
@@ -286,6 +288,12 @@ export default function PatternReplacementModal() {
                     onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
                     placeholder="Value for {{tools}}..."
                   />
+                </div>
+                <div>
+                  <p className="text-xs text-[#666]">Examples:</p>
+                  <a href="https://rentry.co/knwsnd75" target="_blank" rel="noopener noreferrer" className="text-[#5fdb72] hover:underline text-[0.9em]">
+                    https://rentry.co/knwsnd75
+                  </a>
                 </div>
 
                 <div className="pt-4 flex gap-3">

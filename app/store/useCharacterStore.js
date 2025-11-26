@@ -123,7 +123,7 @@ You dummy!
       initializeMessage: () => {
         if (get().isInitialized) return;
         const currentFirstMessage = get().character.firstMessage;
-        const system_prompt = usePromptStore.getState().system_prompt;
+        const system_prompt = usePromptStore.getState().getEffectivePrompt();
         const processedPrompt = replacerTemplate(
           system_prompt,
           get().character,
@@ -151,7 +151,7 @@ You dummy!
       //TO RESET THE MESSAGE
       resetMessage: () => {
         const currentFirstMessage = get().character.firstMessage;
-        const system_prompt = usePromptStore.getState().system_prompt;
+        const system_prompt = usePromptStore.getState().getEffectivePrompt();
         const processedPrompt = replacerTemplate(
           system_prompt,
           get().character,
@@ -241,7 +241,7 @@ You dummy!
         try {
           // Get the current messages (up to and including the edited user message)
           const currentMessages = get().character.messages;
-          
+
           // Get debug store
           const { addLog } = useDebugStore.getState();
 
@@ -324,7 +324,7 @@ You dummy!
                 messages: currentMessages,
               }
             });
-            
+
             throw error;
           }
         } catch (error) {
@@ -337,6 +337,141 @@ You dummy!
           setLoading(false);
         }
       },
+      // Regenerate the last message
+      regenerateLastMessage: async () => {
+        const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
+        const { setLoading } = get();
+        const messages = get().character.messages;
+
+        // Ensure the last message is from the assistant
+        if (messages.length === 0 || messages[messages.length - 1].role !== "assistant") {
+          return;
+        }
+
+        const lastMessageIndex = messages.length - 1;
+
+        // Context is everything before the last message
+        const contextMessages = messages.slice(0, -1);
+
+        setLoading(true);
+
+        try {
+          const { addLog } = useDebugStore.getState();
+
+          addLog({
+            type: "api",
+            endpoint: "https://openrouter.ai/api/v1/chat/completions",
+            request: {
+              model: model_id,
+              messages: contextMessages,
+            }
+          });
+
+          const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${api_key}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: model_id,
+                messages: contextMessages,
+                temperature: temperature,
+                max_tokens: max_tokens,
+                top_p: top_p,
+                frequency_penalty: frequency_penalty,
+                presence_penalty: presence_penalty,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          addLog({
+            type: "api",
+            endpoint: "https://openrouter.ai/api/v1/chat/completions",
+            response: data,
+            request: {
+              model: model_id,
+              messages: contextMessages,
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(data.error?.message || "API request failed");
+          }
+          if (!data.choices || data.choices.length === 0) {
+            throw new Error("No choices returned from API");
+          }
+
+          const newContent = data.choices[0].message.content;
+
+          // Update the message with new candidate
+          set((state) => {
+            const currentMessages = [...state.character.messages];
+            const targetMessage = { ...currentMessages[lastMessageIndex] };
+
+            // Initialize candidates if not present
+            if (!targetMessage.candidates) {
+              targetMessage.candidates = [targetMessage.content];
+            }
+
+            // Add new candidate
+            targetMessage.candidates.push(newContent);
+            targetMessage.currentIndex = targetMessage.candidates.length - 1;
+            targetMessage.content = newContent;
+
+            currentMessages[lastMessageIndex] = targetMessage;
+
+            return {
+              character: {
+                ...state.character,
+                messages: currentMessages,
+              },
+            };
+          });
+
+        } catch (error) {
+          console.error("Error regenerating response:", error.message);
+        } finally {
+          setLoading(false);
+        }
+      },
+
+      // Navigate between message candidates
+      navigateMessage: (messageIndex, direction) => {
+        set((state) => {
+          const currentMessages = [...state.character.messages];
+          const message = { ...currentMessages[messageIndex] };
+
+          if (!message.candidates || message.candidates.length <= 1) return state;
+
+          let newIndex = (message.currentIndex !== undefined ? message.currentIndex : 0);
+          if (direction === 'prev') {
+            newIndex = Math.max(0, newIndex - 1);
+          } else if (direction === 'next') {
+            newIndex = Math.min(message.candidates.length - 1, newIndex + 1);
+          }
+
+          if (newIndex !== message.currentIndex) {
+            message.currentIndex = newIndex;
+            message.content = message.candidates[newIndex];
+            currentMessages[messageIndex] = message;
+
+            return {
+              character: {
+                ...state.character,
+                messages: currentMessages,
+              },
+            };
+          }
+
+          return state;
+        });
+      },
+
       // Delete a message at a specific index
       deleteMessage: (index) => {
         // Prevent deletion of system messages
@@ -403,7 +538,7 @@ You dummy!
           );
           if (selectedCharacter) {
             // Initialize messages for the selected character
-            const system_prompt = usePromptStore.getState().system_prompt;
+            const system_prompt = usePromptStore.getState().getEffectivePrompt();
             const processedPrompt = replacerTemplate(
               system_prompt,
               selectedCharacter,

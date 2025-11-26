@@ -1,7 +1,9 @@
-import { Edit, Trash2, Loader2, Grid } from "lucide-react";
+import { Edit, Trash2, Loader2, Grid, Copy, RefreshCw, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import { processText } from "../../utils/textUtils";
+import { useState } from "react";
 
 export default function CharacterChat({
   text,
@@ -19,44 +21,43 @@ export default function CharacterChat({
   onConfirmDelete,
   onCancelDelete,
   isRecentMessage,
+  onRegenerate,
+  onNavigate,
+  isFirstMessage,
 }) {
-  // Process the text to apply styling
-  const processText = (inputText) => {
-    if (!inputText) return "";
-    // Replace "text" with span having primary color
-    let processed = inputText.content.replace(
-      /"(.*?)"/g,
-      '<span style="font-weight: bold;">$1</span>'
-    );
+  const [copied, setCopied] = useState(false);
 
-    return processed;
+  const processedText = processText(text.content);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
-
-  const processedText = processText(text);
 
   const replacerTools = (text) => {
     // Get pattern replacement settings from store
     const { patternReplacementSettings } = useCharacterStore.getState();
-    
+
     // If no settings or patterns are empty, return original text
     if (!patternReplacementSettings ||
-        !patternReplacementSettings.findPattern ||
-        !patternReplacementSettings.replacePattern) {
+      !patternReplacementSettings.findPattern ||
+      !patternReplacementSettings.replacePattern) {
       return text;
     }
-    
+
     // Replace {{tools}} placeholder in the replace pattern with the prompt input
     let finalReplacePattern = patternReplacementSettings.replacePattern;
     if (patternReplacementSettings.prompt) {
       finalReplacePattern = finalReplacePattern.replace(/\{\{tools\}\}/g, patternReplacementSettings.prompt);
     }
-    
+
     try {
       // Check if we should use regex or normal text replacement
       if (patternReplacementSettings.isRegex) {
         // Create regex from find pattern
         const regex = new RegExp(patternReplacementSettings.findPattern, 'g');
-        
+
         // Replace using the replace pattern
         return text.replace(regex, finalReplacePattern);
       } else {
@@ -64,7 +65,7 @@ export default function CharacterChat({
         // Escape special regex characters in the find pattern for literal matching
         const escapedFindPattern = patternReplacementSettings.findPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(escapedFindPattern, 'g');
-        
+
         // Replace using the replace pattern
         return text.replace(regex, finalReplacePattern);
       }
@@ -143,22 +144,68 @@ export default function CharacterChat({
             <ReactMarkdown rehypePlugins={[rehypeRaw]}>{replacerTools(processedText)}</ReactMarkdown>
           </div>
         )}
-        {!isSystemMessage && !isEditing && !isDeleting && isRecentMessage && (
-          <div className="flex opacity-50 gap-2 mt-2">
-            <button
-              onClick={() => onEdit(messageId, messageContent)}
-              className=" text-[#A2A2A2] hover:text-[#E4E4E4] transition-colors"
-              aria-label="Edit message"
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              onClick={() => onDelete(messageId)}
-              className=" text-[#A2A2A2] hover:text-red-400 transition-colors"
-              aria-label="Delete message"
-            >
-              <Trash2 size={16} />
-            </button>
+        {!isSystemMessage && !isEditing && !isDeleting && (
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex opacity-50 gap-2">
+              {text.candidates && text.candidates.length > 1 && (
+                <div className="flex items-center gap-1 mr-2">
+                  <button
+                    onClick={() => onNavigate('prev')}
+                    disabled={!text.currentIndex || text.currentIndex === 0}
+                    className="text-[#A2A2A2] hover:text-[#E4E4E4] disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs text-[#A2A2A2]">
+                    {(text.currentIndex || 0) + 1}/{text.candidates.length}
+                  </span>
+                  <button
+                    onClick={() => onNavigate('next')}
+                    disabled={text.currentIndex === text.candidates.length - 1}
+                    className="text-[#A2A2A2] hover:text-[#E4E4E4] disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+
+              {isRecentMessage && (
+                <>
+                  <button
+                    onClick={handleCopy}
+                    className="text-[#A2A2A2] hover:text-[#E4E4E4] transition-colors"
+                    aria-label="Copy message"
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                  {!isFirstMessage && (
+                    <>
+                      <button
+                        onClick={onRegenerate}
+                        className="text-[#A2A2A2] hover:text-[#E4E4E4] transition-colors"
+                        aria-label="Regenerate response"
+                      >
+                        <RefreshCw size={16} />
+                      </button>
+                      <button
+                        onClick={() => onEdit(messageId, messageContent)}
+                        className="text-[#A2A2A2] hover:text-[#E4E4E4] transition-colors"
+                        aria-label="Edit message"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(messageId)}
+                        className="text-[#A2A2A2] hover:text-red-400 transition-colors"
+                        aria-label="Delete message"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

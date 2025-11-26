@@ -23,6 +23,15 @@ const useApiSettingStore = create(
       setTopP: (top_p) => set({ top_p }),
       setFrequencyPenalty: (frequency_penalty) => set({ frequency_penalty }),
       setPresencePenalty: (presence_penalty) => set({ presence_penalty }),
+
+      // Reset parameters to defaults
+      resetParameters: () => set({
+        temperature: 0.7,
+        max_tokens: 500,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0
+      }),
     }),
     {
       name: 'api-storage',  // ← Unique name for localStorage

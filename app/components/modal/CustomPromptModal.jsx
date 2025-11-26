@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, FileText, Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, FileText, Plus, Trash2, ChevronDown, ChevronRight, Copy, Download, Upload, Save, Layout } from "lucide-react";
 import usePromptStore from "../../store/usePromptStore";
+import useCharacterStore from "../../store/useCharacterStore";
 
 export default function CustomPromptModal({ onClose }) {
   const {
@@ -13,314 +14,361 @@ export default function CustomPromptModal({ onClose }) {
     setCustomPrompts,
     setPromptNames,
     setSelectedPromptIndex,
-    addCustomPrompt,
-    updateCustomPrompt,
-    updatePromptName,
-    removeCustomPrompt
   } = usePromptStore();
-  
- const [activeTab, setActiveTab] = useState('default');
- const [promptValues, setPromptValues] = useState(['']);
- const [promptNames, setPromptNamesLocal] = useState([]);
- const [isPlaceholdersCollapsed, setIsPlaceholdersCollapsed] = useState(true);
 
- // Initialize prompt values and active tab when component mounts
- useEffect(() => {
-   // Update prompt values if we have persisted data
-   if (custom_prompts.length > 0) {
-     setPromptValues([...custom_prompts]);
-   } else {
-     // Initialize with at least one empty prompt if none exist
-     setPromptValues(['']);
-   }
-   
-   // Update prompt names if we have persisted data
-   if (prompt_names.length > 0) {
-     setPromptNamesLocal([...prompt_names]);
-   } else {
-     // Initialize with default names
-     const defaultNames = Array(Math.max(1, custom_prompts.length)).fill('').map((_, i) => `Prompt ${i + 1}`);
-     setPromptNamesLocal(defaultNames);
-   }
-   
-   // Set active tab to the selected prompt or default
-   if (selected_prompt_index >= 0 && selected_prompt_index < custom_prompts.length) {
-     setActiveTab(selected_prompt_index);
-   } else {
-     setActiveTab('default');
-   }
- }, []); // Empty dependency array means this effect runs only once when the component mounts
+  // Local state for "draft" editing
+  // We initialize these from the store, but edits stay local until "Save" is clicked.
+  const [localPrompts, setLocalPrompts] = useState([]);
+  const [localNames, setLocalNames] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1); // -1 = Default System Prompt
+  const [isPlaceholdersCollapsed, setIsPlaceholdersCollapsed] = useState(true);
+  const fileInputRef = useRef(null);
+
+  // Initialize local state from store on mount
+  useEffect(() => {
+    setLocalPrompts([...custom_prompts]);
+    setLocalNames([...prompt_names]);
+
+    // Validate selected index against current prompts
+    if (selected_prompt_index >= 0 && selected_prompt_index < custom_prompts.length) {
+      setSelectedIndex(selected_prompt_index);
+    } else {
+      setSelectedIndex(-1);
+    }
+  }, []); // Empty dependency array = run once on mount
 
   const handleSave = () => {
-    // The store is already updated in real-time, so we just need to set the selected prompt index
-    if (activeTab !== 'default' && activeTab < promptValues.length) {
-      setSelectedPromptIndex(activeTab);
-    } else {
-      setSelectedPromptIndex(-1);
-    }
+    // Commit local changes to the global store
+    setCustomPrompts(localPrompts);
+    setPromptNames(localNames);
+    setSelectedPromptIndex(selectedIndex);
+
+    // Update the current character's system prompt immediately
+    const effectivePrompt = selectedIndex === -1
+      ? system_prompt
+      : localPrompts[selectedIndex];
+
+    useCharacterStore.getState().updateSystemPrompt(effectivePrompt);
+
     onClose();
   };
 
-  const handleReset = () => {
-    setPromptValues(['']);
-    setPromptNamesLocal([]);
-    // Reset the store
-    setCustomPrompts([]);
-    setPromptNames([]);
-    setSelectedPromptIndex(-1);
-    setActiveTab('default');
+  const handleAddNew = () => {
+    const newPrompts = [...localPrompts, ""];
+    const newNames = [...localNames, `Prompt ${localNames.length + 1}`];
+    setLocalPrompts(newPrompts);
+    setLocalNames(newNames);
+    setSelectedIndex(newPrompts.length - 1); // Switch to the new prompt
   };
 
-  const handleAddPrompt = () => {
-    const newPromptValues = [...promptValues, ''];
-    const newPromptNames = [...promptNames, `Prompt ${promptValues.length + 1}`];
-    setPromptValues(newPromptValues);
-    setPromptNamesLocal(newPromptNames);
-    // Immediately update the store to persist the new prompt
-    setCustomPrompts(newPromptValues);
-    setPromptNames(newPromptNames);
-    setActiveTab(newPromptValues.length - 1);
-  };
+  const handleDelete = (index, e) => {
+    e.stopPropagation(); // Prevent clicking the item row
 
-  const handleRemovePrompt = (index) => {
-    if (promptValues.length <= 1) return;
-    
-    const newPromptValues = promptValues.filter((_, i) => i !== index);
-    const newPromptNames = promptNames.filter((_, i) => i !== index);
-    setPromptValues(newPromptValues);
-    setPromptNamesLocal(newPromptNames);
-    // Immediately update the store to persist the removal
-    setCustomPrompts(newPromptValues);
-    setPromptNames(newPromptNames);
-    
-    // Adjust active tab if needed
-    if (activeTab === index) {
-      setActiveTab(newPromptValues.length > 0 ? Math.max(0, index - 1) : 'default');
-    } else if (activeTab > index) {
-      setActiveTab(activeTab - 1);
+    const newPrompts = localPrompts.filter((_, i) => i !== index);
+    const newNames = localNames.filter((_, i) => i !== index);
+
+    setLocalPrompts(newPrompts);
+    setLocalNames(newNames);
+
+    // Adjust selection if needed
+    if (selectedIndex === index) {
+      setSelectedIndex(-1); // Fallback to default
+    } else if (selectedIndex > index) {
+      setSelectedIndex(selectedIndex - 1);
     }
   };
 
-  const handlePromptChange = (index, value) => {
-    const newPromptValues = [...promptValues];
-    newPromptValues[index] = value;
-    setPromptValues(newPromptValues);
-    // Immediately update the store to persist the change
-    setCustomPrompts(newPromptValues);
+  const handleDuplicate = (index, e) => {
+    e.stopPropagation();
+    const promptToCopy = localPrompts[index];
+    const nameToCopy = localNames[index];
+
+    const newPrompts = [...localPrompts, promptToCopy];
+    const newNames = [...localNames, `${nameToCopy} (Copy)`];
+
+    setLocalPrompts(newPrompts);
+    setLocalNames(newNames);
+    setSelectedIndex(newPrompts.length - 1);
   };
 
-  const handlePromptNameChange = (index, value) => {
-    const newPromptNames = [...promptNames];
-    newPromptNames[index] = value;
-    setPromptNamesLocal(newPromptNames);
-    // Immediately update the store to persist the name change
-    setPromptNames(newPromptNames);
+  const handleExport = () => {
+    const data = {
+      prompts: localPrompts,
+      names: localNames
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "custom_prompts.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
-  const getActivePromptValue = () => {
-    if (activeTab === 'default') {
-      return system_prompt;
-    }
-    return promptValues[activeTab] || '';
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const renderTabContent = () => {
-    if (activeTab === 'default') {
-      return (
-        <div className="flex flex-col gap-3">
-          <label
-            htmlFor="defaultPrompt"
-            className="text-lg font-medium text-[#f2f2f2]"
-          >
-            Default Prompt Template
-          </label>
-          <textarea
-            id="defaultPrompt"
-            className="w-full h-48 sm:h-64 px-4 py-3 bg-green-500/20 rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72]/0 transition-shadow resize-none"
-            value={system_prompt}
-            readOnly
-            placeholder="Default prompt template"
-          />
-          <p className="text-sm text-[#8e8e8e]">
-            This is the default prompt. To customize, add a new prompt tab.
-          </p>
-        </div>
-      );
-    }
+  const handleImportFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    return (
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor={`customPrompt-${activeTab}`}
-              className="text-lg font-medium text-[#f2f2f2]"
-            >
-              Prompt Template
-            </label>
-            <input
-              type="text"
-              className="w-full max-w-xs px-2 py-1 bg-[#161616]/30 border border-white/10 rounded text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
-              value={promptNames[activeTab] || `Prompt ${activeTab + 1}`}
-              onChange={(e) => handlePromptNameChange(activeTab, e.target.value)}
-              placeholder={`Prompt ${activeTab + 1}`}
-            />
-          </div>
-          {promptValues.length > 1 && (
-            <button
-              onClick={() => handleRemovePrompt(activeTab)}
-              className="flex items-center gap-1 px-2 py-1 bg-red-500/20 border border-red-500/30 text-red-300 rounded-lg hover:bg-red-500/30 transition-colors"
-            >
-              <Trash2 size={14} />
-              <span className="text-xs">Delete</span>
-            </button>
-          )}
-        </div>
-        <textarea
-          id={`customPrompt-${activeTab}`}
-          className="w-full h-48 sm:h-64 px-4 py-3 bg-[#161616]/30 border border-white/10 rounded-lg text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
-          value={promptValues[activeTab] || ''}
-          onChange={(e) => handlePromptChange(activeTab, e.target.value)}
-          placeholder="Enter your custom prompt with placeholders like {{char}}, {{user}}, {{tools}}, etc."
-        />
-      </div>
-    );
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (Array.isArray(data.prompts) && Array.isArray(data.names)) {
+          // Append imported prompts
+          setLocalPrompts([...localPrompts, ...data.prompts]);
+          setLocalNames([...localNames, ...data.names]);
+        } else {
+          alert("Invalid format: JSON must contain 'prompts' and 'names' arrays.");
+        }
+      } catch (err) {
+        console.error("Error parsing JSON", err);
+        alert("Error parsing JSON file");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null; // Reset input
+  };
+
+  const handleNameChange = (val) => {
+    if (selectedIndex === -1) return;
+    const newNames = [...localNames];
+    newNames[selectedIndex] = val;
+    setLocalNames(newNames);
+  };
+
+  const handleContentChange = (val) => {
+    if (selectedIndex === -1) return; // Can't edit default system prompt text here (it's read-only or managed elsewhere)
+    const newPrompts = [...localPrompts];
+    newPrompts[selectedIndex] = val;
+    setLocalPrompts(newPrompts);
   };
 
   return (
-    // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 bg-opacity-50 p-4 overflow-y-auto">
-      {/* Modal Content */}
-      <div className="w-full h-full lg:h-auto max-w-3xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-4 mx-2 border border-white/20 bg-white/2">
-        {/* Modal Header */}
-        <header className="flex items-center justify-between p-4 border-b border-[#3b3b3b]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 bg-opacity-50 p-2 md:p-4 overflow-hidden">
+      <div className="w-full h-[95vh] md:h-[90vh] max-w-7xl rounded-xl shadow-2xl flex flex-col font-sans border border-white/10 bg-[#0f0f0f] overflow-hidden">
+
+        {/* Header */}
+        <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-[#2a2a2a] bg-[#141414] shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
-              Custom Prompts
+            <h2 className="text-lg md:text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
+              <Layout size={20} className="text-[#5fdb72]" />
+              Prompt Manager
             </h2>
-            <p className="text-xs text-[#8e8e] mt-1">
-              Create and manage multiple prompt templates
-            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
-            aria-label="Close modal"
-          >
-            <X size={16}  />
-          </button>
-        </header>
-        
-        {/* Tabs */}
-        <div className="px-4 border-b border-[#3b3b3b]">
-          <div className="flex items-center gap-1 overflow-x-auto py-2">
+          <div className="flex items-center gap-3">
             <button
-              className={`px-3 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap ${
-                activeTab === 'default'
-                  ? 'bg-[#5fdb72]/15 text-[#e4ffe8] border-b-2 border-[#5fdb72]'
-                  : 'text-[#d9d9d9] hover:text-white hover:bg-[#333]/50'
-              }`}
-              onClick={() => setActiveTab('default')}
+              onClick={onClose}
+              className="flex items-center justify-center w-8 h-8 text-[#8e8e8e] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              Default
+              <X size={20} />
             </button>
-            
-            {promptValues.map((_, index) => (
-              <div key={index} className="flex items-center">
-                <button
-                  className={`px-3 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap ${
-                    activeTab === index
-                      ? 'bg-[#5fdb72]/15 text-[#e4ffe8] border-b-2 border-[#5fdb72]'
-                      : 'text-[#d9d9d9] hover:text-white hover:bg-[#33]/50'
+          </div>
+        </header>
+
+        {/* Main Content - Sidebar Layout */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 flex flex-col border-b md:border-b-0 md:border-r border-[#2a2a2a] bg-[#111111] max-h-[30vh] md:max-h-none shrink-0">
+            <div className="p-2 md:p-3 flex flex-col gap-2 overflow-y-auto flex-1">
+
+              {/* Default Item */}
+              <button
+                onClick={() => setSelectedIndex(-1)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all shrink-0 ${selectedIndex === -1
+                  ? "bg-[#5fdb72]/10 text-[#5fdb72] border border-[#5fdb72]/20"
+                  : "text-[#a1a1a1] hover:bg-white/5 hover:text-white border border-transparent"
                   }`}
-                  onClick={() => setActiveTab(index)}
+              >
+                <div className={`p-1.5 rounded-md ${selectedIndex === -1 ? 'bg-[#5fdb72]/20' : 'bg-[#2a2a2a]'}`}>
+                  <FileText size={14} />
+                </div>
+                <span>Default Prompt</span>
+              </button>
+
+              <div className="h-px bg-[#2a2a2a] my-1 shrink-0" />
+
+              <div className="px-1 text-xs font-semibold text-[#555] uppercase tracking-wider mb-1 shrink-0">
+                Custom Prompts
+              </div>
+
+              {/* Custom Items List */}
+              {localNames.map((name, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setSelectedIndex(idx)}
+                  className={`group flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all shrink-0 ${selectedIndex === idx
+                    ? "bg-[#5fdb72]/10 text-[#5fdb72] border border-[#5fdb72]/20"
+                    : "text-[#a1a1a1] hover:bg-white/5 hover:text-white border border-transparent"
+                    }`}
                 >
-                  {promptNames[index] || `Prompt ${index + 1}`}
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className={`p-1.5 rounded-md flex-shrink-0 ${selectedIndex === idx ? 'bg-[#5fdb72]/20' : 'bg-[#2a2a2a]'}`}>
+                      <FileText size={14} />
+                    </div>
+                    <span className="truncate">{name || "Untitled"}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => handleDuplicate(idx, e)}
+                      className="p-1.5 text-[#a1a1a1] hover:text-white hover:bg-white/10 rounded-md"
+                      title="Duplicate"
+                    >
+                      <Copy size={12} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(idx, e)}
+                      className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md"
+                      title="Delete"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {localNames.length === 0 && (
+                <div className="text-center py-4 text-[#444] text-xs italic">
+                  No custom prompts yet.
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar Footer Actions */}
+            <div className="p-2 md:p-3 border-t border-[#2a2a2a] bg-[#141414] flex flex-col gap-2 shrink-0">
+              <button
+                onClick={handleAddNew}
+                className="flex items-center justify-center gap-2 w-full py-2 bg-[#5fdb72]/10 hover:bg-[#5fdb72]/20 text-[#5fdb72] border border-[#5fdb72]/30 rounded-lg text-xs font-medium transition-colors"
+              >
+                <Plus size={14} />
+                New Prompt
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleImportClick}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#a1a1a1] rounded-lg text-xs font-medium transition-colors"
+                  title="Import JSON"
+                >
+                  <Upload size={12} />
+                  Import
+                </button>
+                <button
+                  onClick={handleExport}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#a1a1a1] rounded-lg text-xs font-medium transition-colors"
+                  title="Export JSON"
+                >
+                  <Download size={12} />
+                  Export
                 </button>
               </div>
-            ))}
-            
-            <button
-              onClick={handleAddPrompt}
-              className="flex items-center gap-1 px-2 py-2 text-xs font-medium text-[#d9d9d9] hover:text-white hover:bg-[#333]/50 rounded-lg"
-            >
-              <Plus size={14} />
-              Add
-            </button>
-          </div>
-        </div>
-        
-        {/* Modal Body */}
-        <main className="p-4 flex flex-col gap-4 overflow-y-auto flex-1">
-          {renderTabContent()}
-          
-          {/* Placeholders Section */}
-          <div className="flex flex-col gap-3">
-            <button
-              className="flex items-center gap-2 text-lg font-medium text-[#f2f2f2] hover:text-[#5fdb72] transition-colors"
-              onClick={() => setIsPlaceholdersCollapsed(!isPlaceholdersCollapsed)}
-            >
-              {isPlaceholdersCollapsed ? (
-                <ChevronRight size={20} className="text-[#5fdb72]" />
-              ) : (
-                <ChevronDown size={20} className="text-[#5fdb72]" />
-              )}
-              <span>Available Placeholders</span>
-            </button>
-            
-            {!isPlaceholdersCollapsed && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-[#1a1a1a] rounded-lg border border-[#333]">
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{char}}"}</span>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImportFile}
+                accept=".json"
+                className="hidden"
+              />
+            </div>
+          </aside>
+
+          {/* Editor Area */}
+          <main className="flex-1 flex flex-col bg-[#0f0f0f] min-w-0 overflow-hidden">
+            {selectedIndex === -1 ? (
+              // Default Prompt View (Read Only)
+              <div className="flex-1 flex flex-col p-4 md:p-6 gap-4 overflow-hidden">
+                <div className="flex flex-col gap-1 shrink-0">
+                  <h3 className="text-xl md:text-2xl font-bold text-[#f2f2f2]">Default System Prompt</h3>
+                  <p className="text-sm text-[#666]">This is the built-in prompt template.</p>
                 </div>
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{user}}"}</span>
+                <div className="flex-1 relative min-h-0 mt-2">
+                  <textarea
+                    className="w-full h-full p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#a1a1a1] font-mono text-base md:text-lg resize-none focus:outline-none shadow-inner"
+                    value={system_prompt}
+                    readOnly
+                  />
+                  <div className="absolute top-3 right-3 px-2 py-1 bg-[#2a2a2a] text-[#666] text-xs rounded border border-[#333]">
+                    Read Only
+                  </div>
                 </div>
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{char_description}}"}</span>
+              </div>
+            ) : (
+              // Custom Prompt Editor
+              <div className="flex-1 flex flex-col p-4 md:p-6 gap-2 overflow-hidden">
+                {/* Prompt Name as Title */}
+                <div className="shrink-0">
+                  <input
+                    type="text"
+                    className="w-full bg-transparent text-[#f2f2f2] text-xl md:text-2xl font-bold placeholder:text-[#333] outline-none border-none p-0 focus:ring-0 transition-all"
+                    value={localNames[selectedIndex] || ""}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    placeholder="Untitled Prompt"
+                  />
                 </div>
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{user_description}}"}</span>
-                </div>
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{scenario}}"}</span>
-                </div>
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{memory}}"}</span>
-                </div>
-                <div className="bg-[#5fdb72]/10 border border-[#5fdb72] p-2 rounded-lg">
-                  <span className="text-[#e4ffe8] font-mono text-xs">{"{{tools}}"}</span>
+
+                <div className="flex-1 flex flex-col gap-2 min-h-0 mt-2">
+                  <div className="flex justify-end items-center shrink-0">
+                    <button
+                      onClick={() => setIsPlaceholdersCollapsed(!isPlaceholdersCollapsed)}
+                      className="text-xs text-[#5fdb72] hover:text-[#5fdb72]/80 flex items-center gap-1 transition-colors bg-[#5fdb72]/5 px-2 py-1 rounded-full"
+                    >
+                      {isPlaceholdersCollapsed ? "Show Variables" : "Hide Variables"}
+                      {isPlaceholdersCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                    </button>
+                  </div>
+
+                  {!isPlaceholdersCollapsed && (
+                    <div className="flex flex-wrap gap-2 p-3 bg-[#181818] border border-[#2a2a2a] rounded-lg mb-2 shrink-0 animate-in fade-in slide-in-from-top-2 duration-200">
+                      {["{{char}}", "{{user}}", "{{char_description}}", "{{user_description}}", "{{scenario}}", "{{memory}}", "{{tools}}"].map(ph => (
+                        <span key={ph} className="px-2 py-1 bg-[#5fdb72]/10 text-[#5fdb72] text-xs font-mono rounded border border-[#5fdb72]/20 select-all cursor-copy hover:bg-[#5fdb72]/20 transition-colors" title="Click to select">
+                          {ph}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <textarea
+                    className="flex-1 w-full p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#e4ffe8] font-mono text-base md:text-lg resize-none outline-none focus:border-[#5fdb72]/50 focus:ring-1 focus:ring-[#5fdb72]/50 transition-all leading-relaxed shadow-lg placeholder:text-[#333]"
+                    value={localPrompts[selectedIndex] || ""}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    placeholder="Write your system prompt here..."
+                    spellCheck={false}
+                  />
                 </div>
               </div>
             )}
+          </main>
+        </div>
+
+        {/* Footer */}
+        <footer className="flex justify-between items-center px-4 md:px-6 py-4 border-t border-[#2a2a2a] bg-[#141414] shrink-0">
+          <div className="text-xs text-[#666]">
+            {localPrompts.length} custom prompt{localPrompts.length !== 1 ? 's' : ''}
           </div>
-        </main>
-        
-        {/* Modal Footer */}
-        <footer className="flex flex-col sm:flex-row justify-between items-center gap-3 p-4 border-t border-[#333]">
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 text-sm font-medium text-white/80 bg-[#454545]/30 border border-[#454545] hover:bg-white/10 rounded-lg transition-colors w-full sm:w-auto"
-            >
-              Reset All
-            </button>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-white/80 bg-[#454545]/30 border border-[#454545] hover:bg-white/10 rounded-lg transition-colors w-full sm:w-auto"
+              className="px-4 py-2 text-sm font-medium text-[#a1a1a1] hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-5 py-2 bg-[#5fdb72]/15 border border-[#5fdb72] rounded-lg text-[#e4ffe8] text-sm font-medium hover:bg-[#5fdb72]/25 transition-colors w-full sm:w-auto"
+              className="flex items-center gap-2 px-6 py-2 bg-[#5fdb72] hover:bg-[#4ecb61] text-black font-semibold rounded-lg text-sm transition-all shadow-[0_0_15px_rgba(95,219,114,0.2)] hover:shadow-[0_0_20px_rgba(95,219,114,0.4)]"
             >
-              Save & Apply
+              <Save size={16} />
+              <span className="hidden md:inline">Save Changes</span>
+              <span className="md:hidden">Save</span>
             </button>
           </div>
         </footer>
+
       </div>
     </div>
   );

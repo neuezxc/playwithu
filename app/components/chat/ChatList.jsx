@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 
 import CharacterChat from "./CharacterChat";
+import UserChat from "./UserChat";
 
 function ChatList() {
   const {
@@ -16,8 +17,11 @@ function ChatList() {
     deleteMessage,
     isLoading,
     editUserMessageAndRegenerate,
+    regenerateLastMessage,
+    navigateMessage,
   } = useCharacterStore();
   const messages = character.messages;
+  const firstVisibleMessageIndex = messages.findIndex(m => m.role !== "system");
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [deletingMessageId, setDeletingMessageId] = useState(null);
@@ -52,8 +56,8 @@ function ChatList() {
   }, [messages]); // This will run whenever messages change
 
   const handleEditClick = (id, content) => {
-    // Prevent editing system messages
-    if (id === 0 && messages[0].role === "system") {
+    // Prevent editing system messages or the first message
+    if (id === firstVisibleMessageIndex) {
       return;
     }
     // Only allow editing the most recent user or assistant message
@@ -84,8 +88,8 @@ function ChatList() {
   };
 
   const handleDeleteClick = (id) => {
-    // Prevent deletion of system messages
-    if (id === 0 && messages[0].role === "system") {
+    // Prevent deletion of system messages or the first message
+    if (id === firstVisibleMessageIndex) {
       return;
     }
     // Only allow deleting the most recent user or assistant message
@@ -104,10 +108,17 @@ function ChatList() {
     setDeletingMessageId(null);
   };
 
+
+
   return (
     <main className="flex-1 w-full max-w-2xl px-5 lg:px-14 overflow-y-auto">
       <div className="flex flex-col gap-6 py-6">
         {messages.map((message, id) => {
+          // Hide the last assistant message while regenerating
+          if (isLoading && id === messages.length - 1 && message.role === "assistant") {
+            return null;
+          }
+
           if (message.role === "assistant") {
             return (
               <CharacterChat
@@ -127,6 +138,9 @@ function ChatList() {
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
                 isRecentMessage={id === lastAssistantMessageIndex}
+                isFirstMessage={id === firstVisibleMessageIndex}
+                onRegenerate={regenerateLastMessage}
+                onNavigate={(direction) => navigateMessage(id, direction)}
               />
             );
           } else if (message.role === "user") {
@@ -147,6 +161,7 @@ function ChatList() {
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
                 isRecentMessage={id === lastUserMessageIndex}
+                isFirstMessage={id === firstVisibleMessageIndex}
               />
             );
           }
@@ -180,113 +195,5 @@ function ChatList() {
   );
 }
 
-
-
-function UserChat({
-  text,
-  messageId,
-  messageContent,
-  onEdit,
-  onDelete,
-  isEditing,
-  editContent,
-  setEditContent,
-  onSaveEdit,
-  onCancelEdit,
-  isDeleting,
-  onConfirmDelete,
-  onCancelDelete,
-  isRecentMessage,
-}) {
-  const processText = (inputText) => {
-    if (!inputText) return "";
-    // Replace "text" with span having primary color
-    let processed = inputText.replace(
-      /"(.*?)"/g,
-      '<span style="font-weight: bold;">$1</span>'
-    );
-
-    return processed;
-  };
-
-  const processedText = processText(text);
-
-  // Don't show edit/delete buttons for system messages
-  const isSystemMessage = messageId === 0 && messageContent.role === "system";
-
-  return (
-    <div className="flex justify-end">
-      {!isSystemMessage && !isEditing && !isDeleting && isRecentMessage && (
-        <div className="flex items-center mb-2 gap-2 mr-2 opacity-40">
-          <button
-            onClick={() => onEdit(messageId, messageContent)}
-            className=" text-[#A2A2A2] hover:text-white/100 transition-colors"
-            aria-label="Edit message"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={() => onDelete(messageId)}
-            className=" text-[#A2A2A2] hover:text-red-400 transition-colors"
-            aria-label="Delete message"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      )}
-
-      <div className="bg-[#242524] border border-[#333333] rounded-2xl p-4 max-w-lg flex flex-col">
-        {isEditing ? (
-          <div className="flex flex-col gap-2 min:w-full w-[300px] ">
-            <textarea
-              className="w-full bg-[#1A1A1A] border border-[#333333] focus:border-[#3A9E49] outline-none  rounded-lg p-2 text-sm text-[#CDCDCD] "
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              rows={5}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => onSaveEdit(messageId)}
-                className="px-3 py-1 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg text-sm text-[#E4E4E4] hover:bg-[#3A9E49]/50 transition-colors"
-              >
-                Save
-              </button>
-              <button
-                onClick={onCancelEdit}
-                className="px-3 py-1 bg-[#1A1A1A] border border-[#333333] rounded-lg text-sm text-[#E4E4E4] hover:bg-[#33333] transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : isDeleting ? (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-[#CDCDCD]">
-              Are you sure you want to delete this message?
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onConfirmDelete(messageId)}
-                className="px-3 py-1 bg-red-500/30 border border-red-500 rounded-lg text-sm text-[#E4E4E4] hover:bg-red-500/50 transition-colors"
-              >
-                Delete
-              </button>
-              <button
-                onClick={onCancelDelete}
-                className="px-3 py-1 bg-[#1A1A1A] border border-[#333333] rounded-lg text-sm text-[#E4E4E4] hover:bg-[#333333] transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-sm font-normal text-[#CDCDCD]">
-            <ReactMarkdown rehypePlugins={[rehypeRaw]}>{processedText}</ReactMarkdown>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default ChatList;

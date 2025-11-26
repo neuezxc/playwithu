@@ -1,11 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; // ← Add this
+import useApiSettingStore from "./useApiSettingStore";
+import useCharacterStore from "./useCharacterStore";
 
 const useMemoryStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       summarizeText: "",
-      prompts: `
+      autoSummarize: false,
+      memoryPrompt: `
 You are neue, an AI assistant specialized in maintaining narrative continuity and world-building consistency. When I provide new narrative content, you will update our shared memory block to track the evolving story.
 
 Your Process:
@@ -65,15 +68,121 @@ Recent Events (Detailed log of last 5 interactions)
 [Previous event with context and outcomes]
 [Continue chronologically backwards]
       `,
-      
+      snapshots: [],
+
       modal: false,
       active: false,
       loading: false,
+
       setSummarizeText: (text) => set({ summarizeText: text }),
+      setAutoSummarize: (enabled) => set({ autoSummarize: enabled }),
+      setMemoryPrompt: (prompt) => set({ memoryPrompt: prompt }),
       setModal: (modal) => set({ modal: modal }),
       setActive: (active) => set({ active: active }),
       setLoading: (loading) => set({ loading: loading }),
-      reset: () => set({ summarizeText: "", active: false }),
+      reset: () => set({ summarizeText: "", active: false, snapshots: [] }),
+
+      // Snapshot Actions
+      addSnapshot: () => {
+        const { summarizeText } = get();
+        if (!summarizeText) return;
+
+        const newSnapshot = {
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          content: summarizeText
+        };
+
+        set((state) => ({
+          snapshots: [newSnapshot, ...state.snapshots].slice(0, 10) // Keep last 10
+        }));
+      },
+
+      restoreSnapshot: (id) => {
+        const { snapshots } = get();
+        const snapshot = snapshots.find(s => s.id === id);
+        if (snapshot) {
+          set({ summarizeText: snapshot.content });
+        }
+      },
+
+      deleteSnapshot: (id) => {
+        set((state) => ({
+          snapshots: state.snapshots.filter(s => s.id !== id)
+        }));
+      },
+
+      // Generate Summary Action
+      generateSummary: async () => {
+        const { loading, memoryPrompt, summarizeText } = get();
+        if (loading) return;
+
+        set({ loading: true });
+
+        try {
+          // Access other stores
+          const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
+          const { character } = useCharacterStore.getState();
+
+          // Format messages
+          const formattedOutput = character.messages
+            .filter((msg) => msg.role !== "system")
+            .map((msg) => `${msg.role}: ${msg.content}`)
+            .join("\n");
+
+          // Prepare prompt with current memory context if it exists
+          let finalPrompt = memoryPrompt;
+          if (summarizeText) {
+            finalPrompt += `\n\nCURRENT MEMORY BLOCK:\n${summarizeText}\n\nUPDATE THE ABOVE MEMORY WITH THE NEW CONTEXT BELOW.`;
+          }
+
+          const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${api_key}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: model_id,
+                messages: [
+                  {
+                    role: "system",
+                    content: finalPrompt,
+                  },
+                  {
+                    role: "user",
+                    content: formattedOutput,
+                  },
+                ],
+                temperature: temperature,
+                max_tokens: max_tokens,
+                top_p: top_p,
+                frequency_penalty: frequency_penalty,
+                presence_penalty: presence_penalty,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error?.message || "Failed to generate summary");
+          }
+
+          const text = data.choices[0].message.content;
+          set({ summarizeText: text });
+
+          // Auto-save snapshot on successful generation
+          get().addSnapshot();
+
+        } catch (error) {
+          console.error("Error generating summary:", error.message);
+        } finally {
+          set({ loading: false });
+        }
+      },
 
     }),
     {

@@ -26,14 +26,23 @@ export default function Home() {
     (state) => state.updateSystemPrompt
   );
   const { system_prompt } = usePromptStore();
+  const { autoSummarize, generateSummary } = useMemoryStore();
 
   useEffect(() => {
     initializeMessage();
   }, [initializeMessage]);
-  
+
   useEffect(() => {
     setMessageCount(character.messages.length);
   }, [character.messages]);
+
+  // Auto-summarize trigger
+  useEffect(() => {
+    if (autoSummarize && messageCount > 0 && messageCount % 10 === 0) {
+      console.log("Auto-summarizing...");
+      generateSummary();
+    }
+  }, [messageCount, autoSummarize, generateSummary]);
 
   return (
     <div className="flex flex-col items-center w-full h-[100dvh] bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">

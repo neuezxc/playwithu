@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, FileText, Plus, Trash2, ChevronDown, ChevronRight, Copy, Download, Upload, Save, Layout } from "lucide-react";
 import usePromptStore from "../../store/usePromptStore";
 import useCharacterStore from "../../store/useCharacterStore";
+import { promptVariables } from "../../utils/replacerTemplate";
 
 export default function CustomPromptModal({ onClose }) {
   const {
@@ -23,6 +24,7 @@ export default function CustomPromptModal({ onClose }) {
   const [selectedIndex, setSelectedIndex] = useState(-1); // -1 = Default System Prompt
   const [isPlaceholdersCollapsed, setIsPlaceholdersCollapsed] = useState(true);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   // Initialize local state from store on mount
   useEffect(() => {
@@ -147,6 +149,27 @@ export default function CustomPromptModal({ onClose }) {
     const newPrompts = [...localPrompts];
     newPrompts[selectedIndex] = val;
     setLocalPrompts(newPrompts);
+  };
+
+  const handleInsertVariable = (variable) => {
+    if (selectedIndex === -1 || !textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = localPrompts[selectedIndex] || "";
+
+    const newValue =
+      currentValue.substring(0, start) +
+      variable +
+      currentValue.substring(end);
+
+    handleContentChange(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + variable.length, start + variable.length);
+    }, 0);
   };
 
   return (
@@ -325,15 +348,21 @@ export default function CustomPromptModal({ onClose }) {
 
                   {!isPlaceholdersCollapsed && (
                     <div className="flex flex-wrap gap-2 p-3 bg-[#181818] border border-[#2a2a2a] rounded-lg mb-2 shrink-0 animate-in fade-in slide-in-from-top-2 duration-200">
-                      {["{{char}}", "{{user}}", "{{char_description}}", "{{user_description}}", "{{scenario}}", "{{memory}}", "{{tools}}"].map(ph => (
-                        <span key={ph} className="px-2 py-1 bg-[#5fdb72]/10 text-[#5fdb72] text-xs font-mono rounded border border-[#5fdb72]/20 select-all cursor-copy hover:bg-[#5fdb72]/20 transition-colors" title="Click to select">
+                      {promptVariables.map(ph => (
+                        <button
+                          key={ph}
+                          onClick={() => handleInsertVariable(ph)}
+                          className="px-2 py-1 bg-[#5fdb72]/10 text-[#5fdb72] text-xs font-mono rounded border border-[#5fdb72]/20 hover:bg-[#5fdb72]/20 transition-colors cursor-pointer"
+                          title="Click to insert"
+                        >
                           {ph}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   )}
 
                   <textarea
+                    ref={textareaRef}
                     className="flex-1 w-full p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#e4ffe8] font-mono text-base md:text-lg resize-none outline-none focus:border-[#5fdb72]/50 focus:ring-1 focus:ring-[#5fdb72]/50 transition-all leading-relaxed shadow-lg placeholder:text-[#333]"
                     value={localPrompts[selectedIndex] || ""}
                     onChange={(e) => handleContentChange(e.target.value)}

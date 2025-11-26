@@ -7,7 +7,7 @@ import useDebugStore from "./useDebugStore";
 
 const replacerTemplate = (template, character, user) => {
   // Get pattern replacement settings from store
-  const { patternReplacementSettings } = useCharacterStore.getState();
+  const { patternReplacements = [] } = useCharacterStore.getState();
 
   const replacements = {
     memory: "",
@@ -16,23 +16,27 @@ const replacerTemplate = (template, character, user) => {
     user: user?.name || "",
     user_description: user?.description || "",
     scenario: character?.scenario || "",
-    tools: patternReplacementSettings?.prompt || "",
+    tools: patternReplacements
+      .filter((p) => p.active && p.prompt)
+      .map((p) => p.prompt)
+      .join("\n"),
   };
 
   // First pass: replace all direct placeholders
   let result = template.replace(
-    /\{\{(\w+)\}\}/g,
-    (match, key) => replacements[key] || ""
+    /\{\{\s*(\w+)\s*\}\}/g,
+    (match, key) => replacements[key.toLowerCase()] || ""
   );
 
   // Second pass: replace any nested placeholders that appeared from the first pass
   result = result.replace(
-    /\{\{(\w+)\}\}/g,
-    (match, key) => replacements[key] || ""
+    /\{\{\s*(\w+)\s*\}\}/g,
+    (match, key) => replacements[key.toLowerCase()] || ""
   );
 
   return result.trim();
 };
+
 const useCharacterStore = create(
   persist(
     (set, get) => ({
@@ -112,12 +116,7 @@ You dummy!
       isLoading: false,
       isCharacterModalOpen: false,
       isPatternReplacementModalOpen: false,
-      patternReplacementSettings: {
-        prompt: "",
-        findPattern: "",
-        replacePattern: "",
-        isRegex: true,
-      },
+      patternReplacements: [], // Array of { id, prompt, findPattern, replacePattern, isRegex, active }
       //RENDER FIRST AS DEFAULT
       isInitialized: false,
       initializeMessage: () => {
@@ -194,6 +193,10 @@ You dummy!
             }),
           },
         }));
+      },
+      refreshSystemPrompt: () => {
+        const system_prompt = usePromptStore.getState().getEffectivePrompt();
+        get().updateSystemPrompt(system_prompt);
       },
       setCharacter: (character) => set({ character: character }),
       // Set loading state
@@ -490,9 +493,41 @@ You dummy!
       // Pattern replacement modal state
       setPatternReplacementModal: (isOpen) =>
         set({ isPatternReplacementModalOpen: isOpen }),
-      // Pattern replacement settings
-      setPatternReplacementSettings: (settings) =>
-        set({ patternReplacementSettings: settings }),
+
+      // Pattern replacement actions
+      setPatternReplacements: (patterns) => set({ patternReplacements: patterns }),
+
+      addPatternReplacement: (pattern) => {
+        set((state) => ({
+          patternReplacements: [...state.patternReplacements, { ...pattern, id: Date.now().toString(), active: true }]
+        }));
+        get().refreshSystemPrompt();
+      },
+
+      updatePatternReplacement: (id, updatedPattern) => {
+        set((state) => ({
+          patternReplacements: state.patternReplacements.map(p =>
+            p.id === id ? { ...p, ...updatedPattern } : p
+          )
+        }));
+        get().refreshSystemPrompt();
+      },
+
+      deletePatternReplacement: (id) => {
+        set((state) => ({
+          patternReplacements: state.patternReplacements.filter(p => p.id !== id)
+        }));
+        get().refreshSystemPrompt();
+      },
+
+      togglePatternReplacement: (id) => {
+        set((state) => ({
+          patternReplacements: state.patternReplacements.map(p =>
+            p.id === id ? { ...p, active: !p.active } : p
+          )
+        }));
+        get().refreshSystemPrompt();
+      },
 
       // Character management functions
       // Add a new character

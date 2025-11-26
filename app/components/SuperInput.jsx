@@ -77,7 +77,7 @@ export default function SuperInput() {
       const { character: charData } = useCharacterStore.getState();
       const { user: userData } = useUserStore.getState();
       const { summarizeText } = useMemoryStore.getState();
-      const { patternReplacementSettings } = useCharacterStore.getState();
+      const { patternReplacements } = useCharacterStore.getState();
       
       // Replace placeholders in the prompt
       const processedPrompt = replacePlaceholders(promptTemplate, {
@@ -87,7 +87,10 @@ export default function SuperInput() {
         user_description: userData.description || "",
         scenario: charData.scenario || "",
         memory: summarizeText || "",
-        tools: patternReplacementSettings?.prompt || ""
+        tools: patternReplacements
+          .filter((p) => p.active && p.prompt)
+          .map((p) => p.prompt)
+          .join("\n"),
       });
 
       // Update the system prompt in the character store

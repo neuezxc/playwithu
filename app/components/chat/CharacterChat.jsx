@@ -37,42 +37,44 @@ export default function CharacterChat({
 
   const replacerTools = (text) => {
     // Get pattern replacement settings from store
-    const { patternReplacementSettings } = useCharacterStore.getState();
+    const { patternReplacements } = useCharacterStore.getState();
 
-    // If no settings or patterns are empty, return original text
-    if (!patternReplacementSettings ||
-      !patternReplacementSettings.findPattern ||
-      !patternReplacementSettings.replacePattern) {
+    // If no settings or empty array, return original text
+    if (!patternReplacements || patternReplacements.length === 0) {
       return text;
     }
 
-    // Replace {{tools}} placeholder in the replace pattern with the prompt input
-    let finalReplacePattern = patternReplacementSettings.replacePattern;
-    if (patternReplacementSettings.prompt) {
-      finalReplacePattern = finalReplacePattern.replace(/\{\{tools\}\}/g, patternReplacementSettings.prompt);
-    }
+    let result = text;
 
-    try {
-      // Check if we should use regex or normal text replacement
-      if (patternReplacementSettings.isRegex) {
-        // Create regex from find pattern
-        const regex = new RegExp(patternReplacementSettings.findPattern, 'g');
+    // Apply all active patterns sequentially
+    for (const pattern of patternReplacements) {
+      if (!pattern.active || !pattern.findPattern) continue;
 
-        // Replace using the replace pattern
-        return text.replace(regex, finalReplacePattern);
-      } else {
-        // Use normal text replacement
-        // Escape special regex characters in the find pattern for literal matching
-        const escapedFindPattern = patternReplacementSettings.findPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(escapedFindPattern, 'g');
+      try {
+        let finalReplacePattern = pattern.replacePattern || "";
+        // Replace {{tools}} placeholder in the replace pattern with the prompt input
+        if (pattern.prompt) {
+          finalReplacePattern = finalReplacePattern.replace(/\{\{tools\}\}/g, pattern.prompt);
+        }
 
-        // Replace using the replace pattern
-        return text.replace(regex, finalReplacePattern);
+        if (pattern.isRegex) {
+          // Create regex from find pattern
+          const regex = new RegExp(pattern.findPattern, 'g');
+          result = result.replace(regex, finalReplacePattern);
+        } else {
+          // Use normal text replacement
+          // Escape special regex characters in the find pattern for literal matching
+          const escapedFindPattern = pattern.findPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(escapedFindPattern, 'g');
+          result = result.replace(regex, finalReplacePattern);
+        }
+      } catch (error) {
+        console.error("Error in replacerTools for pattern:", pattern, error);
+        // Continue to next pattern even if one fails
       }
-    } catch (error) {
-      console.error("Error in replacerTools:", error);
-      return text;
     }
+
+    return result;
   };
 
   // Don't show edit/delete buttons for system messages

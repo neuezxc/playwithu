@@ -1,6 +1,6 @@
 'use client'
-import React, { useState } from "react";
-import { X, User, Image, FileText, MessageSquare } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, User, Image, FileText, MessageSquare, Save, Sparkles, BrainCircuit, VenetianMask } from "lucide-react";
 import useCharacterStore from "@/app/store/useCharacterStore";
 
 export default function CharacterModal({ character: editingCharacter, prefillActive = true }) {
@@ -12,15 +12,52 @@ export default function CharacterModal({ character: editingCharacter, prefillAct
   const addCharacter = useCharacterStore((state) => state.addCharacter);
   const updateCharacter = useCharacterStore((state) => state.updateCharacter);
 
+  const [activeTab, setActiveTab] = useState("identity"); // "identity" | "behavior"
+
   // Local state for editing character details
   const [editableCharacter, setEditableCharacter] = useState({
-    name: editingCharacter?.name || (prefillActive ? activeCharacter?.name || "" : ""),
-    avatarURL: editingCharacter?.avatarURL || (prefillActive ? activeCharacter?.avatarURL || "" : ""),
-    bio: editingCharacter?.bio || (prefillActive ? activeCharacter?.bio || "" : ""),
-    description: editingCharacter?.description || (prefillActive ? activeCharacter?.description || "" : ""),
-    scenario: editingCharacter?.scenario || (prefillActive ? activeCharacter?.scenario || "" : ""),
-    firstMessage: editingCharacter?.firstMessage || (prefillActive ? activeCharacter?.firstMessage || "" : ""),
+    name: "",
+    avatarURL: "",
+    bio: "",
+    description: "",
+    scenario: "",
+    firstMessage: "",
   });
+
+  // Initialize state when modal opens or props change
+  useEffect(() => {
+    if (isCharacterModalOpen) {
+      if (editingCharacter) {
+        setEditableCharacter({
+          name: editingCharacter.name || "",
+          avatarURL: editingCharacter.avatarURL || "",
+          bio: editingCharacter.bio || "",
+          description: editingCharacter.description || "",
+          scenario: editingCharacter.scenario || "",
+          firstMessage: editingCharacter.firstMessage || "",
+        });
+      } else if (prefillActive && activeCharacter) {
+        setEditableCharacter({
+          name: activeCharacter.name || "",
+          avatarURL: activeCharacter.avatarURL || "",
+          bio: activeCharacter.bio || "",
+          description: activeCharacter.description || "",
+          scenario: activeCharacter.scenario || "",
+          firstMessage: activeCharacter.firstMessage || "",
+        });
+      } else {
+        setEditableCharacter({
+          name: "",
+          avatarURL: "",
+          bio: "",
+          description: "",
+          scenario: "",
+          firstMessage: "",
+        });
+      }
+      setActiveTab("identity"); // Reset tab on open
+    }
+  }, [isCharacterModalOpen, editingCharacter, prefillActive, activeCharacter]);
 
   // Handle input changes
   const handleInputChange = (field, value) => {
@@ -44,7 +81,7 @@ export default function CharacterModal({ character: editingCharacter, prefillAct
         ...activeCharacter,
         ...editableCharacter,
       });
-      
+
       // Also update the character in the characters array
       updateCharacter({
         ...activeCharacter,
@@ -62,175 +99,202 @@ export default function CharacterModal({ character: editingCharacter, prefillAct
 
   // Close modal without saving
   const handleClose = () => {
-    // Reset editable character to current character values or empty for new character
-    if (editingCharacter) {
-      setEditableCharacter({
-        name: editingCharacter.name || "",
-        avatarURL: editingCharacter.avatarURL || "",
-        bio: editingCharacter.bio || "",
-        description: editingCharacter.description || "",
-        scenario: editingCharacter.scenario || "",
-        firstMessage: editingCharacter.firstMessage || "",
-      });
-    } else if (prefillActive && activeCharacter) {
-      setEditableCharacter({
-        name: activeCharacter.name || "",
-        avatarURL: activeCharacter.avatarURL || "",
-        bio: activeCharacter.bio || "",
-        description: activeCharacter.description || "",
-        scenario: activeCharacter.scenario || "",
-        firstMessage: activeCharacter.firstMessage || "",
-      });
-    } else {
-      setEditableCharacter({
-        name: "",
-        avatarURL: "",
-        bio: "",
-        description: "",
-        scenario: "",
-        firstMessage: "",
-      });
-    }
     setCharacterModal(false);
   };
 
   if (!isCharacterModalOpen) return null;
 
   return (
-    // Modal Overlay: Centers the modal and provides a backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 bg-opacity-50 p-4 ">
-      
-      {/* Modal Content */}
-      <div className="w-full max-w-2xl  rounded-xl shadow-lg flex flex-col font-sans max-h-[95vh] overflow-hidden border border-white/30 bg-white/2" >
-        {/* Modal Header */}
-        <header className="flex items-center justify-between p-6 border-b border-[#3b3b3b]">
-          <h2 className="text-xl font-bold text-[#f2f2f2] tracking-[-0.4px] flex flex-row gap-1 items-center">
-            {editingCharacter ? "Edit Character" : "Create Character"}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all duration-300">
+      <div className="w-full h-full md:h-auto md:max-h-[90vh] max-w-5xl rounded-2xl shadow-2xl flex flex-col font-sans border border-white/10 bg-[#121212] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#181818]">
+          <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <div className="p-1.5 bg-green-500/10 rounded-lg">
+              {editingCharacter ? <Sparkles size={18} className="text-green-400" /> : <User size={18} className="text-green-400" />}
+            </div>
+            {editingCharacter ? "Edit Character" : "Create New Character"}
           </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleClose}
-              className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
-              aria-label="Close modal"
-            >
-              <X size={16}  />
-            </button>
-          </div>
+          <button
+            onClick={handleClose}
+            className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+          >
+            <X size={20} />
+          </button>
         </header>
 
-        {/* Modal Body - Scrollable Content */}
-        <main className="p-6 flex flex-col gap-5 overflow-y-auto">
-          {/* Character Name */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px] flex items-center gap-1">
-              <User size={16} />
-              Name
-            </label>
-            <input
-              type="text"
-              className="w-full bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
-              value={editableCharacter.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-            />
+        {/* Tabs */}
+        <div className="px-6 pt-4 pb-0 border-b border-white/5 bg-[#121212]">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setActiveTab("identity")}
+              className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${activeTab === "identity" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
+                }`}
+            >
+              <VenetianMask size={16} />
+              Identity
+              {activeTab === "identity" && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("behavior")}
+              className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${activeTab === "behavior" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
+                }`}
+            >
+              <BrainCircuit size={16} />
+              Behavior
+              {activeTab === "behavior" && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
+              )}
+            </button>
           </div>
+        </div>
 
-          {/* Avatar URL */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px] flex items-center gap-1">
-              <Image size={16} />
-              Avatar URL
-            </label>
-            <input
-              type="text"
-              className="w-full bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow"
-              value={editableCharacter.avatarURL}
-              onChange={(e) => handleInputChange("avatarURL", e.target.value)}
-            />
-            {editableCharacter.avatarURL && (
-              <div className="flex justify-center mt-2 ">
-                <div className="rounded-lg flex items-center justify-center aspect-video">
-                  <img
-                    src={editableCharacter.avatarURL}
-                    alt="Avatar preview"
-                    className="h-full rounded-sm"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+
+          {activeTab === "identity" && (
+            <div className="flex flex-col md:flex-row gap-6 animate-in slide-in-from-left-4 duration-300">
+
+              {/* Left Column: Avatar & Basic Info */}
+              <div className="w-full md:w-80 shrink-0 flex flex-col gap-4">
+                {/* Avatar Preview */}
+                <div className="aspect-square w-full bg-[#1a1a1a] rounded-xl border border-white/10 flex items-center justify-center overflow-hidden relative group">
+                  {editableCharacter.avatarURL ? (
+                    <img
+                      src={editableCharacter.avatarURL}
+                      alt="Avatar preview"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-gray-600">
+                      <Image size={48} strokeWidth={1} />
+                      <span className="text-xs">No Avatar</span>
+                    </div>
+                  )}
+                  {/* Overlay Hint */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <p className="text-xs text-white font-medium">Preview</p>
+                  </div>
+                </div>
+
+                {/* Avatar URL Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Avatar URL</label>
+                  <input
+                    type="text"
+                    value={editableCharacter.avatarURL}
+                    onChange={(e) => handleInputChange("avatarURL", e.target.value)}
+                    placeholder="https://example.com/image.png"
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all"
                   />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Bio */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px] flex items-center gap-1">
-              <FileText size={16} />
-              Bio
-            </label>
-            <textarea
-              className="w-full h-24 bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none"
-              value={editableCharacter.bio}
-              onChange={(e) => handleInputChange("bio", e.target.value)}
-            />
-          </div>
+              {/* Right Column: Name & Bio */}
+              <div className="flex-1 flex flex-col gap-4">
+                {/* Name */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</label>
+                  <input
+                    type="text"
+                    value={editableCharacter.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    placeholder="e.g. Seraphina"
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-lg font-medium text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all"
+                  />
+                </div>
 
-          {/* Description */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px] flex items-center gap-1">
-              <FileText size={16} />
-              Description
-            </label>
-            <textarea
-              className="w-full h-32 bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none h-[300px]"
-              value={editableCharacter.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-            />
-          </div>
+                {/* Bio */}
+                <div className="space-y-2 flex-1 flex flex-col">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Short Bio</label>
+                  <textarea
+                    value={editableCharacter.bio}
+                    onChange={(e) => handleInputChange("bio", e.target.value)}
+                    placeholder="A brief summary of the character..."
+                    className="w-full flex-1 min-h-[120px] bg-[#1a1a1a] border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all resize-none leading-relaxed"
+                  />
+                  <p className="text-[10px] text-gray-500 text-right">
+                    Visible in character cards and lists.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {/* Scenario */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px] flex items-center gap-1">
-              <FileText size={16} />
-              Scenario
-            </label>
-            <textarea
-              className="w-full  bg-[#161616] border border-[#333] rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none h-[200px]"
-              value={editableCharacter.scenario}
-              onChange={(e) => handleInputChange("scenario", e.target.value)}
-            />
-          </div>
+          {activeTab === "behavior" && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
 
-          {/* First Message */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-medium text-[#8e8e8e] tracking-[-0.2px] flex items-center gap-1">
-              <MessageSquare size={16} />
-              First Message
-            </label>
-            <textarea
-              className="w-full h-32 bg-[#1616]/60 border border-none rounded-lg p-3 text-white placeholder:text-[#f2f2f2]/40 text-sm font-medium outline-none focus:ring-2 focus:ring-[#5fdb72] transition-shadow resize-none h-[300px]"
-              value={editableCharacter.firstMessage}
-              onChange={(e) => handleInputChange("firstMessage", e.target.value)}
-            />
-          </div>
-          
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <FileText size={14} />
+                  Description / Personality
+                </label>
+                <textarea
+                  value={editableCharacter.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  placeholder="Detailed personality, traits, and physical description..."
+                  className="w-full h-40 bg-[#1a1a1a] border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all resize-none leading-relaxed font-mono"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Scenario */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <BrainCircuit size={14} />
+                    Scenario
+                  </label>
+                  <textarea
+                    value={editableCharacter.scenario}
+                    onChange={(e) => handleInputChange("scenario", e.target.value)}
+                    placeholder="The current situation or context of the conversation..."
+                    className="w-full h-48 bg-[#1a1a1a] border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all resize-none leading-relaxed font-mono"
+                  />
+                </div>
+
+                {/* First Message */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <MessageSquare size={14} />
+                    First Message
+                  </label>
+                  <textarea
+                    value={editableCharacter.firstMessage}
+                    onChange={(e) => handleInputChange("firstMessage", e.target.value)}
+                    placeholder="The opening line from the character..."
+                    className="w-full h-48 bg-[#1a1a1a] border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all resize-none leading-relaxed"
+                  />
+                </div>
+              </div>
+
+            </div>
+          )}
         </main>
 
-        {/* Modal Footer */}
-        <footer className="flex flex-row justify-end items-center gap-4 p-6 border-t border-[#3c3c3c]">
+        {/* Footer */}
+        <footer className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/5 bg-[#181818]">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-white/80 bg-[#454545]/30 border border-[#454545] hover:bg-white/10 rounded-lg transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 bg-[#5fdb72]/15 border border-[#5fdb72] rounded-lg text-[#e4ffe8] text-sm font-medium hover:bg-[#5fdb72]/25 transition-colors"
+            className="px-6 py-2.5 bg-green-500 hover:bg-green-400 text-black font-semibold rounded-xl shadow-lg shadow-green-500/20 transition-all flex items-center gap-2"
           >
-            Save Changes
+            <Save size={16} />
+            Save Character
           </button>
         </footer>
+
       </div>
     </div>
   );

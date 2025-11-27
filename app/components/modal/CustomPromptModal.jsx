@@ -177,10 +177,10 @@ export default function CustomPromptModal({ onClose }) {
       <div className="w-full h-[95vh] md:h-[90vh] max-w-7xl rounded-xl shadow-2xl flex flex-col font-sans border border-white/10 bg-[#0f0f0f] overflow-hidden">
 
         {/* Header */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-[#2a2a2a] bg-[#141414] shrink-0">
+        <header className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3 border-b border-[#2a2a2a] bg-[#141414] shrink-0">
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
-              <Layout size={20} className="text-[#5fdb72]" />
+            <h2 className="text-base md:text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
+              <Layout size={18} className="text-[#5fdb72]" />
               Prompt Manager
             </h2>
           </div>
@@ -189,7 +189,7 @@ export default function CustomPromptModal({ onClose }) {
               onClick={onClose}
               className="flex items-center justify-center w-8 h-8 text-[#8e8e8e] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </header>
@@ -204,7 +204,7 @@ export default function CustomPromptModal({ onClose }) {
               {/* Default Item */}
               <button
                 onClick={() => setSelectedIndex(-1)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all shrink-0 ${selectedIndex === -1
+                className={`flex items-center gap-3 px-3 py-2 md:py-2.5 rounded-lg text-sm font-medium transition-all shrink-0 ${selectedIndex === -1
                   ? "bg-[#5fdb72]/10 text-[#5fdb72] border border-[#5fdb72]/20"
                   : "text-[#a1a1a1] hover:bg-white/5 hover:text-white border border-transparent"
                   }`}
@@ -212,7 +212,7 @@ export default function CustomPromptModal({ onClose }) {
                 <div className={`p-1.5 rounded-md ${selectedIndex === -1 ? 'bg-[#5fdb72]/20' : 'bg-[#2a2a2a]'}`}>
                   <FileText size={14} />
                 </div>
-                <span>Default Prompt</span>
+                <span className="truncate">Default Prompt</span>
               </button>
 
               <div className="h-px bg-[#2a2a2a] my-1 shrink-0" />
@@ -265,22 +265,22 @@ export default function CustomPromptModal({ onClose }) {
             </div>
 
             {/* Sidebar Footer Actions */}
-            <div className="p-2 md:p-3 border-t border-[#2a2a2a] bg-[#141414] flex flex-col gap-2 shrink-0">
+            <div className="p-2 md:p-3 border-t border-[#2a2a2a] bg-[#141414] flex flex-row md:flex-col gap-2 shrink-0">
               <button
                 onClick={handleAddNew}
-                className="flex items-center justify-center gap-2 w-full py-2 bg-[#5fdb72]/10 hover:bg-[#5fdb72]/20 text-[#5fdb72] border border-[#5fdb72]/30 rounded-lg text-xs font-medium transition-colors"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 py-2 bg-[#5fdb72]/10 hover:bg-[#5fdb72]/20 text-[#5fdb72] border border-[#5fdb72]/30 rounded-lg text-xs font-medium transition-colors"
               >
                 <Plus size={14} />
-                New Prompt
+                <span className="md:inline">New</span>
               </button>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-1 md:flex-none">
                 <button
                   onClick={handleImportClick}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#a1a1a1] rounded-lg text-xs font-medium transition-colors"
                   title="Import JSON"
                 >
                   <Upload size={12} />
-                  Import
+                  <span className="hidden md:inline">Import</span>
                 </button>
                 <button
                   onClick={handleExport}
@@ -288,7 +288,7 @@ export default function CustomPromptModal({ onClose }) {
                   title="Export JSON"
                 >
                   <Download size={12} />
-                  Export
+                  <span className="hidden md:inline">Export</span>
                 </button>
               </div>
               <input
@@ -304,31 +304,31 @@ export default function CustomPromptModal({ onClose }) {
           {/* Editor Area */}
           <main className="flex-1 flex flex-col bg-[#0f0f0f] min-w-0 overflow-hidden">
             {selectedIndex === -1 ? (
-              // Default Prompt View (Read Only)
-              <div className="flex-1 flex flex-col p-4 md:p-6 gap-4 overflow-hidden">
+              /* Default Prompt View (Read Only) */
+              <div className="flex-1 flex flex-col p-3 md:p-6 gap-3 md:gap-4 overflow-hidden">
                 <div className="flex flex-col gap-1 shrink-0">
-                  <h3 className="text-xl md:text-2xl font-bold text-[#f2f2f2]">Default System Prompt</h3>
-                  <p className="text-sm text-[#666]">This is the built-in prompt template.</p>
+                  <h3 className="text-lg md:text-2xl font-bold text-[#f2f2f2]">Default System Prompt</h3>
+                  <p className="text-xs md:text-sm text-[#666]">This is the built-in prompt template.</p>
                 </div>
                 <div className="flex-1 relative min-h-0 mt-2">
                   <textarea
-                    className="w-full h-full p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#a1a1a1] font-mono text-base md:text-lg resize-none focus:outline-none shadow-inner"
+                    className="w-full h-full p-4 md:p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#a1a1a1] font-mono text-sm md:text-lg resize-none focus:outline-none shadow-inner"
                     value={system_prompt}
                     readOnly
                   />
-                  <div className="absolute top-3 right-3 px-2 py-1 bg-[#2a2a2a] text-[#666] text-xs rounded border border-[#333]">
+                  <div className="absolute top-3 right-3 px-2 py-1 bg-[#2a2a2a] text-[#666] text-[10px] md:text-xs rounded border border-[#333]">
                     Read Only
                   </div>
                 </div>
               </div>
             ) : (
-              // Custom Prompt Editor
-              <div className="flex-1 flex flex-col p-4 md:p-6 gap-2 overflow-hidden">
+              /* Custom Prompt Editor */
+              <div className="flex-1 flex flex-col p-3 md:p-6 gap-2 overflow-hidden">
                 {/* Prompt Name as Title */}
                 <div className="shrink-0">
                   <input
                     type="text"
-                    className="w-full bg-transparent text-[#f2f2f2] text-xl md:text-2xl font-bold placeholder:text-[#333] outline-none border-none p-0 focus:ring-0 transition-all"
+                    className="w-full bg-transparent text-[#f2f2f2] text-lg md:text-2xl font-bold placeholder:text-[#333] outline-none border-none p-0 focus:ring-0 transition-all"
                     value={localNames[selectedIndex] || ""}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Untitled Prompt"
@@ -339,7 +339,7 @@ export default function CustomPromptModal({ onClose }) {
                   <div className="flex justify-end items-center shrink-0">
                     <button
                       onClick={() => setIsPlaceholdersCollapsed(!isPlaceholdersCollapsed)}
-                      className="text-xs text-[#5fdb72] hover:text-[#5fdb72]/80 flex items-center gap-1 transition-colors bg-[#5fdb72]/5 px-2 py-1 rounded-full"
+                      className="text-[10px] md:text-xs text-[#5fdb72] hover:text-[#5fdb72]/80 flex items-center gap-1 transition-colors bg-[#5fdb72]/5 px-2 py-1 rounded-full"
                     >
                       {isPlaceholdersCollapsed ? "Show Variables" : "Hide Variables"}
                       {isPlaceholdersCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
@@ -347,12 +347,12 @@ export default function CustomPromptModal({ onClose }) {
                   </div>
 
                   {!isPlaceholdersCollapsed && (
-                    <div className="flex flex-wrap gap-2 p-3 bg-[#181818] border border-[#2a2a2a] rounded-lg mb-2 shrink-0 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex flex-wrap gap-1.5 md:gap-2 p-2 md:p-3 bg-[#181818] border border-[#2a2a2a] rounded-lg mb-2 shrink-0 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[100px] overflow-y-auto">
                       {promptVariables.map(ph => (
                         <button
                           key={ph}
                           onClick={() => handleInsertVariable(ph)}
-                          className="px-2 py-1 bg-[#5fdb72]/10 text-[#5fdb72] text-xs font-mono rounded border border-[#5fdb72]/20 hover:bg-[#5fdb72]/20 transition-colors cursor-pointer"
+                          className="px-1.5 py-0.5 md:px-2 md:py-1 bg-[#5fdb72]/10 text-[#5fdb72] text-[10px] md:text-xs font-mono rounded border border-[#5fdb72]/20 hover:bg-[#5fdb72]/20 transition-colors cursor-pointer"
                           title="Click to insert"
                         >
                           {ph}
@@ -363,7 +363,7 @@ export default function CustomPromptModal({ onClose }) {
 
                   <textarea
                     ref={textareaRef}
-                    className="flex-1 w-full p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#e4ffe8] font-mono text-base md:text-lg resize-none outline-none focus:border-[#5fdb72]/50 focus:ring-1 focus:ring-[#5fdb72]/50 transition-all leading-relaxed shadow-lg placeholder:text-[#333]"
+                    className="flex-1 w-full p-4 md:p-6 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl text-[#e4ffe8] font-mono text-sm md:text-lg resize-none outline-none focus:border-[#5fdb72]/50 focus:ring-1 focus:ring-[#5fdb72]/50 transition-all leading-relaxed shadow-lg placeholder:text-[#333]"
                     value={localPrompts[selectedIndex] || ""}
                     onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Write your system prompt here..."
@@ -376,22 +376,22 @@ export default function CustomPromptModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <footer className="flex justify-between items-center px-4 md:px-6 py-4 border-t border-[#2a2a2a] bg-[#141414] shrink-0">
-          <div className="text-xs text-[#666]">
+        <footer className="flex justify-between items-center px-3 md:px-6 py-3 md:py-4 border-t border-[#2a2a2a] bg-[#141414] shrink-0">
+          <div className="text-[10px] md:text-xs text-[#666]">
             {localPrompts.length} custom prompt{localPrompts.length !== 1 ? 's' : ''}
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-[#a1a1a1] hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-[#a1a1a1] hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-6 py-2 bg-[#5fdb72] hover:bg-[#4ecb61] text-black font-semibold rounded-lg text-sm transition-all shadow-[0_0_15px_rgba(95,219,114,0.2)] hover:shadow-[0_0_20px_rgba(95,219,114,0.4)]"
+              className="flex items-center gap-2 px-4 py-1.5 md:px-6 md:py-2 bg-[#5fdb72] hover:bg-[#4ecb61] text-black font-semibold rounded-lg text-xs md:text-sm transition-all shadow-[0_0_15px_rgba(95,219,114,0.2)] hover:shadow-[0_0_20px_rgba(95,219,114,0.4)]"
             >
-              <Save size={16} />
+              <Save size={14} className="md:w-4 md:h-4" />
               <span className="hidden md:inline">Save Changes</span>
               <span className="md:hidden">Save</span>
             </button>

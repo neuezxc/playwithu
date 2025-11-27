@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Users } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
@@ -17,14 +17,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SuperInput() {
- const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
+  const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
   const setModalMemory = useMemoryStore((state) => state.setModal);
   const { character, isCharacterModalOpen } = useCharacterStore();
   const setCharacterModal = useCharacterStore((state) => state.setCharacterModal);
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
- const setCharacter = useCharacterStore((state) => state.setCharacter);
+  const setCharacter = useCharacterStore((state) => state.setCharacter);
   const resetMessage = useCharacterStore((state) => state.resetMessage);
   const setSummarizeText = useMemoryStore((state) => state.setSummarizeText);
   const setActive = useMemoryStore((state) => state.setActive);
@@ -65,20 +65,20 @@ export default function SuperInput() {
       // Update UI immediately for better UX
       setCharacter({ ...character, messages: updatedMessage });
       setUser({ ...user, message: "" });
-      
+
       // Set loading state
       setLoading(true);
 
       // Get the effective prompt (custom or default)
       const { getEffectivePrompt } = usePromptStore.getState();
       const promptTemplate = getEffectivePrompt();
-      
+
       // Get character and user data for placeholder replacement
       const { character: charData } = useCharacterStore.getState();
       const { user: userData } = useUserStore.getState();
       const { summarizeText } = useMemoryStore.getState();
       const { patternReplacements } = useCharacterStore.getState();
-      
+
       // Replace placeholders in the prompt
       const processedPrompt = replacePlaceholders(promptTemplate, {
         char: charData.name || "AI Assistant",
@@ -184,7 +184,7 @@ export default function SuperInput() {
             messages: messagesWithPrompt,
           }
         });
-        
+
         throw error;
       }
     } catch (error) {
@@ -205,7 +205,7 @@ export default function SuperInput() {
       e.preventDefault();
       handleMessage();
     }
- };
+  };
 
   return (
     <footer className="flex flex-col items-center w-full lg:p-4">
@@ -224,6 +224,13 @@ export default function SuperInput() {
               setIsCustomPromptOpen={setIsCustomPromptOpen}
               setIsDebugModalOpen={setIsDebugModalOpen}
             />
+            <button
+              onClick={() => router.push("/characters")}
+              className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+              title="All Characters"
+            >
+              <Users size={16} className="text-[#EEEEEE]" />
+            </button>
             <button
               onClick={() => setCharacterModal(true)}
               className="flex items-center justify-center px-3 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
@@ -244,14 +251,14 @@ export default function SuperInput() {
 
       {/* Character Modal */}
       {isCharacterModalOpen && <CharacterModal prefillActive={true} />}
-      
-      
+
+
       {/* Pattern Replacement Modal */}
       <PatternReplacementModal />
-      
+
       {/* Custom Prompt Modal */}
       {isCustomPromptOpen && <CustomPromptModal onClose={() => setIsCustomPromptOpen(false)} />}
-      
+
       {/* Debug Modal */}
       {isDebugModalOpen && <DebugModal onClose={() => setIsDebugModalOpen(false)} />}
 

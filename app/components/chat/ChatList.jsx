@@ -10,6 +10,8 @@ import rehypeRaw from "rehype-raw";
 import CharacterChat from "./CharacterChat";
 import UserChat from "./UserChat";
 
+import CharacterImagePopup from "./CharacterImagePopup";
+
 function ChatList() {
   const {
     character,
@@ -25,6 +27,10 @@ function ChatList() {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState("");
   const [deletingMessageId, setDeletingMessageId] = useState(null);
+
+  // Popup state
+  const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
+
   // Find indices of the most recent user and assistant messages
   let lastUserMessageIndex = -1;
   let lastAssistantMessageIndex = -1;
@@ -108,7 +114,9 @@ function ChatList() {
     setDeletingMessageId(null);
   };
 
-
+  const handleImageClick = () => {
+    setIsImagePopupOpen(true);
+  };
 
   return (
     <main className="flex-1 w-full max-w-2xl px-5 lg:px-14 overflow-y-auto">
@@ -141,6 +149,7 @@ function ChatList() {
                 isFirstMessage={id === firstVisibleMessageIndex}
                 onRegenerate={regenerateLastMessage}
                 onNavigate={(direction) => navigateMessage(id, direction)}
+                onImageClick={handleImageClick}
               />
             );
           } else if (message.role === "user") {
@@ -168,7 +177,7 @@ function ChatList() {
         })}
         {isLoading && (
           <div className="flex items-start gap-3">
-            <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center">
+            <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center cursor-pointer" onClick={handleImageClick}>
               {character.avatarURL ? (
                 <img
                   src={character.avatarURL}
@@ -191,6 +200,13 @@ function ChatList() {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      <CharacterImagePopup
+        isOpen={isImagePopupOpen}
+        onClose={() => setIsImagePopupOpen(false)}
+        imageSrc={character.avatarURL}
+        characterName={character.name}
+      />
     </main>
   );
 }

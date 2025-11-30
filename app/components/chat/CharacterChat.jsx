@@ -24,6 +24,7 @@ export default function CharacterChat({
   onRegenerate,
   onNavigate,
   isFirstMessage,
+  onImageClick,
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -82,7 +83,10 @@ export default function CharacterChat({
 
   return (
     <div className="flex items-start gap-3">
-      <div className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center">
+      <div
+        className="w-[50px] h-[50px] bg-[#393A39] rounded-lg flex-shrink-0 overflow-hidden items-center justify-center cursor-pointer"
+        onClick={onImageClick}
+      >
         {/* You can place an <img /> tag here for the character's avatar */}
         {character.avatarURL ? (
           <img

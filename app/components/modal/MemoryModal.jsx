@@ -20,18 +20,18 @@ export default function MemoryModal() {
   } = useMemoryStore();
 
   const { updateSystemPrompt } = useCharacterStore((state) => state);
-  const { system_prompt } = usePromptStore();
+  const activePromptContent = usePromptStore(state => state.getActivePromptContent())
 
   const [activeTab, setActiveTab] = useState("memory"); // memory, settings, history
   const [hasMemoryPlaceholder, setHasMemoryPlaceholder] = useState(true);
 
   useEffect(() => {
-    setHasMemoryPlaceholder(system_prompt.includes("{{memory}}"));
-  }, [system_prompt]);
+    setHasMemoryPlaceholder(activePromptContent.includes('{{memory}}'))
+  }, [activePromptContent])
 
   const handleSave = () => {
     if (!summarizeText) return;
-    updateSystemPrompt(system_prompt.replace("{{memory}}", summarizeText));
+    updateSystemPrompt(activePromptContent.replace('{{memory}}', summarizeText))
     setActive(true);
     setModal(false);
   };

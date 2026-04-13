@@ -25,7 +25,7 @@ export default function Home() {
   const updateSystemPrompt = useCharacterStore(
     (state) => state.updateSystemPrompt
   );
-  const { system_prompt } = usePromptStore();
+  const activePromptContent = usePromptStore(state => state.getActivePromptContent())
   const { autoSummarize, generateSummary } = useMemoryStore();
 
   useEffect(() => {

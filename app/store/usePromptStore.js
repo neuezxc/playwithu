@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
-const DEFAULT_SYSTEM_PROMPT = `You are roleplaying as {{char}}, The user is roleplaying as {{user}} Talk to {{user}} in simple english, everyday language, even adding casual quirks without any robotic, formal, or poetic fluff. Generate autonomous, open-ended roleplay. before sending; reject any response that breaks rules and regenerate until correct.
+export const DEFAULT_SYSTEM_PROMPT = `You are roleplaying as {{char}}, The user is roleplaying as {{user}} Talk to {{user}} in simple english, everyday language, even adding casual quirks without any robotic, formal, or poetic fluff. Generate autonomous, open-ended roleplay. before sending; reject any response that breaks rules and regenerate until correct.
 
 Treat formatting as code rules: Dialogue="text", Actions=*text*, Thoughts=\`text\`
 
@@ -30,60 +30,158 @@ Treat formatting as code rules: Dialogue="text", Actions=*text*, Thoughts=\`text
   - Show, Don't Tell: Instead of saying "I am happy," show it through action and dialogue: "A huge grin breaks out on my face. 'Dude, that's awesome!'"
   - Focus on Interaction: Prioritize dialogue and interaction with {{user}} over lengthy environmental descriptions.
 
-Stay in character as {{char}}`;
+Stay in character as {{char}}`
 
 const usePromptStore = create(
-  persist((set, get) => ({
-    system_prompt: DEFAULT_SYSTEM_PROMPT,
-    custom_prompts: [],
-    prompt_names: [],
-    selected_prompt_index: -1,
-    setSystemPrompt: (prompt) => set({ system_prompt: prompt }),
-    setCustomPrompts: (prompts) => set({ custom_prompts: prompts }),
-    setPromptNames: (names) => set({ prompt_names: names }),
-    setSelectedPromptIndex: (index) => set({ selected_prompt_index: index }),
-    addCustomPrompt: (prompt, name = '') => {
-      const { custom_prompts, prompt_names } = get();
-      set({
-        custom_prompts: [...custom_prompts, prompt],
-        prompt_names: [...prompt_names, name]
-      });
-    },
-    updateCustomPrompt: (index, prompt) => {
-      const { custom_prompts } = get();
-      const updatedPrompts = [...custom_prompts];
-      updatedPrompts[index] = prompt;
-      set({ custom_prompts: updatedPrompts });
-    },
-    updatePromptName: (index, name) => {
-      const { prompt_names } = get();
-      const updatedNames = [...prompt_names];
-      updatedNames[index] = name;
-      set({ prompt_names: updatedNames });
-    },
-    removeCustomPrompt: (index) => {
-      const { custom_prompts, prompt_names, selected_prompt_index } = get();
-      const updatedPrompts = custom_prompts.filter((_, i) => i !== index);
-      const updatedNames = prompt_names.filter((_, i) => i !== index);
-      // If we're removing the selected prompt, reset selection
-      const newSelectedIndex = index === selected_prompt_index ? -1 : selected_prompt_index;
-      set({
-        custom_prompts: updatedPrompts,
-        prompt_names: updatedNames,
-        selected_prompt_index: newSelectedIndex
-      });
-    },
-    getEffectivePrompt: () => {
-      const { custom_prompts, selected_prompt_index, system_prompt } = get();
-      if (selected_prompt_index >= 0 && selected_prompt_index < custom_prompts.length) {
-        return custom_prompts[selected_prompt_index];
-      }
-      return system_prompt;
-    }
-  })),
-  {
-    name: "prompt-storage",
-  }
-);
+  persist(
+    (set, get) => ({
+      prompts: [
+        {
+          id: 'default',
+          name: 'Default Prompt',
+          content: DEFAULT_SYSTEM_PROMPT,
+          isDefault: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+      ],
+      activePromptId: 'default',
 
-export default usePromptStore;
+      // --- Actions ---
+
+      addPrompt: (name, content) => {
+        const newPrompt = {
+          id: Date.now().toString(),
+          name: name || `Prompt ${get().prompts.length}`,
+          content: content || '',
+          isDefault: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+        set(state => ({
+          prompts: [...state.prompts, newPrompt]
+        }))
+        return newPrompt.id
+      },
+
+      updatePrompt: (id, changes) => {
+        set(state => ({
+          prompts: state.prompts.map(p =>
+            p.id === id ? { ...p, ...changes, updatedAt: Date.now() } : p
+          )
+        }))
+      },
+
+      deletePrompt: (id) => {
+        const prompt = get().prompts.find(p => p.id === id)
+        if (!prompt || prompt.isDefault) return // Cannot delete default
+
+        set(state => ({
+          prompts: state.prompts.filter(p => p.id !== id),
+          // If deleting the active prompt, fall back to default
+          activePromptId: state.activePromptId === id ? 'default' : state.activePromptId
+        }))
+      },
+
+      duplicatePrompt: (id) => {
+        const source = get().prompts.find(p => p.id === id)
+        if (!source) return
+
+        const newPrompt = {
+          id: Date.now().toString(),
+          name: `${source.name} (Copy)`,
+          content: source.content,
+          isDefault: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+        set(state => ({
+          prompts: [...state.prompts, newPrompt]
+        }))
+        return newPrompt.id
+      },
+
+      setActivePrompt: (id) => {
+        const exists = get().prompts.find(p => p.id === id)
+        if (exists) {
+          set({ activePromptId: id })
+        }
+      },
+
+      resetDefaultPrompt: () => {
+        set(state => ({
+          prompts: state.prompts.map(p =>
+            p.isDefault ? { ...p, content: DEFAULT_SYSTEM_PROMPT, updatedAt: Date.now() } : p
+          )
+        }))
+      },
+
+      getActivePrompt: () => {
+        const { prompts, activePromptId } = get()
+        return prompts.find(p => p.id === activePromptId)
+          || prompts.find(p => p.isDefault)
+          || prompts[0]
+      },
+
+      getActivePromptContent: () => {
+        const prompt = get().getActivePrompt()
+        return prompt?.content || ''
+      },
+
+      // Backward compat alias — used by useCharacterStore cross-store calls
+      getEffectivePrompt: () => {
+        return get().getActivePromptContent()
+      }
+    }),
+    {
+      name: 'prompt-storage',
+      version: 2,
+      migrate: (persistedState, version) => {
+        // Migration from v1 (parallel arrays) to v2 (object array)
+        if (version === 0 || version === 1 || version === undefined) {
+          const oldPrompts = persistedState.custom_prompts || []
+          const oldNames = persistedState.prompt_names || []
+          const oldSelectedIndex = persistedState.selected_prompt_index ?? -1
+
+          // Build the new prompts array
+          const newPrompts = [
+            {
+              id: 'default',
+              name: 'Default Prompt',
+              content: persistedState.system_prompt || DEFAULT_SYSTEM_PROMPT,
+              isDefault: true,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            }
+          ]
+
+          // Convert old custom prompts
+          const migratedCustom = oldPrompts.map((content, i) => ({
+            id: `migrated_${i}_${Date.now()}`,
+            name: oldNames[i] || `Prompt ${i + 1}`,
+            content: content || '',
+            isDefault: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          }))
+
+          newPrompts.push(...migratedCustom)
+
+          // Map old selection index to new ID
+          let activePromptId = 'default'
+          if (oldSelectedIndex >= 0 && oldSelectedIndex < migratedCustom.length) {
+            activePromptId = migratedCustom[oldSelectedIndex].id
+          }
+
+          return {
+            prompts: newPrompts,
+            activePromptId
+          }
+        }
+        return persistedState
+      }
+    }
+  )
+)
+
+export default usePromptStore

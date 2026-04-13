@@ -1,41 +1,11 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import usePromptStore from "./usePromptStore";
-import useUserStore from "./useUserStore";
-import useApiSettingStore from "./useApiSettingStore";
-import useDebugStore from "./useDebugStore";
-
-const replacerTemplate = (template, character, user) => {
-  // Get pattern replacement settings from store
-  const { patternReplacements = [] } = useCharacterStore.getState();
-
-  const replacements = {
-    memory: "",
-    char: character?.name || "",
-    char_description: character?.description || "",
-    user: user?.name || "",
-    user_description: user?.description || "",
-    scenario: character?.scenario || "",
-    tools: patternReplacements
-      .filter((p) => p.active && p.prompt)
-      .map((p) => p.prompt)
-      .join("\n"),
-  };
-
-  // First pass: replace all direct placeholders
-  let result = template.replace(
-    /\{\{\s*(\w+)\s*\}\}/g,
-    (match, key) => replacements[key.toLowerCase()] || ""
-  );
-
-  // Second pass: replace any nested placeholders that appeared from the first pass
-  result = result.replace(
-    /\{\{\s*(\w+)\s*\}\}/g,
-    (match, key) => replacements[key.toLowerCase()] || ""
-  );
-
-  return result.trim();
-};
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import usePromptStore from "./usePromptStore"
+import useUserStore from "./useUserStore"
+import useApiSettingStore from "./useApiSettingStore"
+import useDebugStore from "./useDebugStore"
+import useMemoryStore from "./useMemoryStore"
+import { replacePlaceholders, buildPlaceholderValues } from "../utils/replacerTemplate"
 
 const useCharacterStore = create(
   persist(
@@ -120,93 +90,60 @@ You dummy!
       //RENDER FIRST AS DEFAULT
       isInitialized: false,
       initializeMessage: () => {
-        if (get().isInitialized) return;
-        const system_prompt = usePromptStore.getState().getEffectivePrompt();
-        const processedPrompt = replacerTemplate(
-          system_prompt,
-          get().character,
-          useUserStore.getState().user
-        );
-
-        const currentFirstMessage = replacerTemplate(
+        if (get().isInitialized) return
+        const promptContent = usePromptStore.getState().getActivePromptContent()
+        const values = buildPlaceholderValues()
+        const processedPrompt = replacePlaceholders(promptContent, values)
+        const currentFirstMessage = replacePlaceholders(
           get().character.firstMessage,
-          get().character,
-          useUserStore.getState().user
-        );
+          values
+        )
 
         const newMessages = [
-          {
-            role: "system",
-            content: processedPrompt,
-          },
-          {
-            role: "assistant",
-            content: currentFirstMessage,
-          },
-        ];
-        set((state) => ({
-          character: {
-            ...state.character,
-            messages: newMessages,
-          },
-          isInitialized: true,
-        }));
+          { role: "system", content: processedPrompt },
+          { role: "assistant", content: currentFirstMessage }
+        ]
+        set(state => ({
+          character: { ...state.character, messages: newMessages },
+          isInitialized: true
+        }))
       },
-      //TO RESET THE MESSAGE
       resetMessage: () => {
-        const system_prompt = usePromptStore.getState().getEffectivePrompt();
-        const processedPrompt = replacerTemplate(
-          system_prompt,
-          get().character,
-          useUserStore.getState().user
-        );
-
-        const currentFirstMessage = replacerTemplate(
+        const promptContent = usePromptStore.getState().getActivePromptContent()
+        const values = buildPlaceholderValues()
+        const processedPrompt = replacePlaceholders(promptContent, values)
+        const currentFirstMessage = replacePlaceholders(
           get().character.firstMessage,
-          get().character,
-          useUserStore.getState().user
-        );
+          values
+        )
 
         const newMessages = [
-          {
-            role: "system",
-            content: processedPrompt,
-          },
-          {
-            role: "assistant",
-            content: currentFirstMessage,
-          },
-        ];
-        set((state) => ({
-          character: {
-            ...state.character,
-            messages: newMessages,
-          },
-        }));
+          { role: "system", content: processedPrompt },
+          { role: "assistant", content: currentFirstMessage }
+        ]
+        set(state => ({
+          character: { ...state.character, messages: newMessages }
+        }))
       },
-      // to update system prompt with template replacement
-      updateSystemPrompt: (newPrompt) => {
-        const processedPrompt = replacerTemplate(
-          newPrompt,
-          get().character,
-          useUserStore.getState().user
-        );
+      updateSystemPrompt: (newPromptContent) => {
+        const values = buildPlaceholderValues()
+        const processedPrompt = replacePlaceholders(newPromptContent, values)
 
-        set((state) => ({
+        set(state => ({
           character: {
             ...state.character,
-            messages: state.character.messages.map((message) => {
+            messages: state.character.messages.map(message => {
               if (message.role === "system") {
-                return { ...message, content: processedPrompt };
+                return { ...message, content: processedPrompt }
               }
-              return message;
-            }),
-          },
-        }));
+              return message
+            })
+          }
+        }))
       },
       refreshSystemPrompt: () => {
-        const system_prompt = usePromptStore.getState().getEffectivePrompt();
-        get().updateSystemPrompt(system_prompt);
+        const promptContent = usePromptStore.getState().getActivePromptContent()
+        get().updateSystemPrompt(promptContent)
       },
       setCharacter: (character) => set({ character: character }),
       // Set loading state
@@ -577,45 +514,46 @@ You dummy!
 
       // Set active character
       setActiveCharacter: (characterId) =>
-        set((state) => {
+        set(state => {
           const selectedCharacter = state.characters.find(
-            (char) => char.id === characterId
-          );
+            char => char.id === characterId
+          )
           if (selectedCharacter) {
-            // Initialize messages for the selected character
-            const system_prompt = usePromptStore.getState().getEffectivePrompt();
-            const processedPrompt = replacerTemplate(
-              system_prompt,
-              selectedCharacter,
-              useUserStore.getState().user
-            );
+            const promptContent = usePromptStore.getState().getActivePromptContent()
+            const { user } = useUserStore.getState()
+            const { summarizeText } = useMemoryStore.getState()
 
-            const processedFirstMessage = replacerTemplate(
+            // Build values with the selected character's data (not the current one)
+            const values = {
+              char: selectedCharacter?.name || '',
+              user: user?.name || '',
+              char_description: selectedCharacter?.description || '',
+              user_description: user?.description || '',
+              scenario: selectedCharacter?.scenario || '',
+              memory: summarizeText || '',
+              tools: state.patternReplacements
+                .filter(p => p.active && p.prompt)
+                .map(p => p.prompt)
+                .join('\n')
+            }
+
+            const processedPrompt = replacePlaceholders(promptContent, values)
+            const processedFirstMessage = replacePlaceholders(
               selectedCharacter.firstMessage,
-              selectedCharacter,
-              useUserStore.getState().user
-            );
+              values
+            )
 
             const newMessages = [
-              {
-                role: "system",
-                content: processedPrompt,
-              },
-              {
-                role: "assistant",
-                content: processedFirstMessage,
-              },
-            ];
+              { role: "system", content: processedPrompt },
+              { role: "assistant", content: processedFirstMessage }
+            ]
 
             return {
-              character: {
-                ...selectedCharacter,
-                messages: newMessages,
-              },
-              isInitialized: true,
-            };
+              character: { ...selectedCharacter, messages: newMessages },
+              isInitialized: true
+            }
           }
-          return state;
+          return state
         }),
     }),
     {

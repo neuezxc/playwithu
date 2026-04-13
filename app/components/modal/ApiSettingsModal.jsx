@@ -1,6 +1,6 @@
 'use client'
-import React, { useState } from "react";
-import { X, Eye, EyeOff, RefreshCw, Play, Info, CheckCircle, AlertCircle, Server, Sliders, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { X, Eye, EyeOff, RefreshCw, Play, Info, Server, Sliders } from "lucide-react";
 import useApiSettingStore from "@/app/store/useApiSettingStore";
 
 export default function ApiSettingsModal() {
@@ -29,7 +29,7 @@ export default function ApiSettingsModal() {
   const [activeTab, setActiveTab] = useState("connection");
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null); // { success: boolean, message: string }
+  const [testResult, setTestResult] = useState(null);
   const [showModelList, setShowModelList] = useState(false);
   const [fetchedModels, setFetchedModels] = useState([]);
 
@@ -37,18 +37,30 @@ export default function ApiSettingsModal() {
     setIsTesting(true);
     setTestResult(null);
     try {
-      const formatUrl = api_endpoint.endsWith('/') ? api_endpoint.slice(0, -1) : api_endpoint;
+      let formatUrl = api_endpoint.endsWith('/') ? api_endpoint.slice(0, -1) : api_endpoint;
+      if (formatUrl.endsWith('/chat/completions')) {
+        formatUrl = formatUrl.slice(0, -'/chat/completions'.length);
+      }
+
+      const headers = {
+        "Accept": "application/json",
+        "X-Title": "PlayWithU",
+        "HTTP-Referer": window.location.origin,
+      };
+
+      if (api_key) {
+        const cleanKey = api_key.startsWith('Bearer ') ? api_key.substring(7) : api_key;
+        headers["Authorization"] = `Bearer ${cleanKey}`;
+      }
+
       const response = await fetch(`${formatUrl}/models`, {
         method: "GET",
-        headers: {
-          "Authorization": `Bearer ${api_key}`,
-          "Content-Type": "application/json"
-        }
+        headers,
       });
 
       if (response.ok) {
         const data = await response.json();
-        
+
         let modelsArray = [];
         if (Array.isArray(data.data)) {
           modelsArray = data.data;
@@ -58,166 +70,176 @@ export default function ApiSettingsModal() {
           modelsArray = data;
         }
 
-        const parsedModels = modelsArray.map(model => (typeof model === 'string' ? model : model.id)).filter(Boolean);
+        const parsedModels = modelsArray
+          .map(model => (typeof model === 'string' ? model : model.id))
+          .filter(Boolean);
 
-        setTestResult({ success: true, message: "Connection successful! Models refreshed." });
+        setTestResult({
+          success: true,
+          message: `Connected — ${parsedModels.length} models found.`,
+        });
         setFetchedModels(parsedModels);
         setShowModelList(parsedModels.length > 0);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        setTestResult({ success: false, message: errorData.error?.message || "Connection failed" });
+        // Soft fail: endpoint responded but /models not supported
+        setTestResult({
+          success: true,
+          message: "Endpoint responded, but model list unavailable. Type the model ID manually.",
+        });
+        setFetchedModels([]);
+        setShowModelList(false);
       }
     } catch (error) {
-      setTestResult({ success: false, message: "Network error or CORS issue" });
+      // Network error or CORS — soft fail
+      setTestResult({
+        success: true,
+        message: "Couldn't verify connection automatically. You can still use this if the endpoint is correct.",
+      });
+      setFetchedModels([]);
+      setShowModelList(false);
     } finally {
       setIsTesting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all duration-300">
-      <div className="w-full h-full md:h-auto md:max-h-[85vh] max-w-2xl rounded-2xl shadow-2xl flex flex-col font-sans border border-white/10 bg-[#121212] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+      <div className="w-full h-full max-w-2xl rounded-xl shadow-lg flex flex-col font-sans max-h-[90vh] my-2 mx-1 sm:mx-2 border border-white/20 bg-[#151615]">
 
         {/* Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#181818]">
-          <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <div className="p-1.5 bg-green-500/10 rounded-lg">
-              <Server size={18} className="text-green-400" />
-            </div>
-            API Settings
-          </h2>
+        <header className="flex items-center justify-between p-4 border-b border-[#3b3b3b]">
+          <div>
+            <h2 className="text-xl font-bold text-[#f2f2f2] tracking-tight flex items-center gap-2">
+              <Server size={18} className="text-[#3A9E49]" />
+              API Settings
+            </h2>
+            <p className="text-xs text-[#8e8e8e] mt-1">Connection & parameters</p>
+          </div>
           <button
             onClick={() => setModal(false)}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="flex items-center justify-center w-8 h-8 bg-[#454545]/30 border border-[#454545] rounded-lg hover:bg-[#454545]/60 transition-colors"
+            aria-label="Close modal"
           >
-            <X size={20} />
+            <X size={16} />
           </button>
         </header>
 
         {/* Tabs */}
-        <div className="px-6 pt-4 pb-0 border-b border-white/5 bg-[#121212]">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setActiveTab("connection")}
-              className={`pb-3 text-sm font-medium transition-all relative ${activeTab === "connection" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
-                }`}
-            >
-              Connection
-              {activeTab === "connection" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("parameters")}
-              className={`pb-3 text-sm font-medium transition-all relative ${activeTab === "parameters" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
-                }`}
-            >
-              Parameters
-              {activeTab === "parameters" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
-              )}
-            </button>
-          </div>
+        <div className="px-4 py-2 border-b border-[#3b3b3b] flex flex-wrap gap-2 items-center">
+          <button
+            className={`px-3 py-1 text-xs font-medium rounded-lg ${
+              activeTab === "connection"
+                ? "bg-[#3A9E49]/15 text-[#e4ffe8] border border-[#3A9E49]"
+                : "text-[#d9d9d9] hover:text-white hover:bg-[#333]/50"
+            }`}
+            onClick={() => setActiveTab("connection")}
+          >
+            Connection
+          </button>
+          <button
+            className={`px-3 py-1 text-xs font-medium rounded-lg ${
+              activeTab === "parameters"
+                ? "bg-[#3A9E49]/15 text-[#e4ffe8] border border-[#3A9E49]"
+                : "text-[#d9d9d9] hover:text-white hover:bg-[#333]/50"
+            }`}
+            onClick={() => setActiveTab("parameters")}
+          >
+            Parameters
+          </button>
         </div>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <main className="p-4 overflow-y-auto flex-1">
 
+          {/* Connection Tab */}
           {activeTab === "connection" && (
-            <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
+            <div className="space-y-4">
 
               {/* Base URL */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Base URL</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={api_endpoint || ""}
-                    onChange={(e) => setApiEndpoint(e.target.value)}
-                    placeholder="e.g. https://openrouter.ai/api/v1"
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all font-mono"
-                  />
-                </div>
+                <label className="text-xs font-medium text-[#8e8e8e]">Base URL</label>
+                <input
+                  type="text"
+                  value={api_endpoint || ""}
+                  onChange={(e) => setApiEndpoint(e.target.value)}
+                  placeholder="e.g. https://openrouter.ai/api/v1"
+                  className="w-full bg-[#212121]/80 border border-[#282828] rounded-lg px-3 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#656565] focus:border-[#3A9E49] outline-none transition-colors font-mono"
+                />
               </div>
 
               {/* API Key */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">API Key</label>
-                <div className="relative group">
+                <label className="text-xs font-medium text-[#8e8e8e]">API Key</label>
+                <div className="relative">
                   <input
                     type={showApiKey ? "text" : "password"}
                     value={api_key}
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder="sk-or-..."
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all font-mono"
+                    className="w-full bg-[#212121]/80 border border-[#282828] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#f2f2f2] placeholder:text-[#656565] focus:border-[#3A9E49] outline-none transition-colors font-mono"
                   />
                   <button
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-white transition-colors rounded-md"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#8e8e8e] hover:text-[#f2f2f2] transition-colors"
                   >
-                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Your key is stored locally in your browser.
-                </p>
+                <p className="text-xs text-[#656565]">Stored locally in your browser.</p>
               </div>
 
-              {/* Model Selection */}
-              <div className="space-y-2 relative z-10">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Model ID</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={model_id || ""}
-                    onChange={(e) => setModelId(e.target.value)}
-                    onFocus={() => { if (fetchedModels.length > 0) setShowModelList(true); }}
-                    onBlur={() => setTimeout(() => setShowModelList(false), 200)}
-                    placeholder="e.g. anthropic/claude-3.5-sonnet"
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all font-mono"
-                  />
-                  {showModelList && fetchedModels.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1 scrollbar-thin scrollbar-thumb-white/10">
-                      {fetchedModels.map((model) => (
-                        <button
-                          key={model}
-                          className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2"
-                          onClick={() => {
-                            setModelId(model);
-                            setShowModelList(false);
-                          }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-green-500/50"></span>
-                          <span className="truncate">{model}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {fetchedModels.length === 0 && <p className="text-[10px] text-gray-500">Test Connection to fetch available models, or type manually.</p>}
+              {/* Model ID */}
+              <div className="space-y-2 relative">
+                <label className="text-xs font-medium text-[#8e8e8e]">Model ID</label>
+                <input
+                  type="text"
+                  value={model_id || ""}
+                  onChange={(e) => setModelId(e.target.value)}
+                  onFocus={() => { if (fetchedModels.length > 0) setShowModelList(true); }}
+                  onBlur={() => setTimeout(() => setShowModelList(false), 200)}
+                  placeholder="e.g. anthropic/claude-3.5-sonnet"
+                  className="w-full bg-[#212121]/80 border border-[#282828] rounded-lg px-3 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#656565] focus:border-[#3A9E49] outline-none transition-colors font-mono"
+                />
+                {showModelList && fetchedModels.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#212121] border border-[#282828] rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 py-1">
+                    {fetchedModels.map((model) => (
+                      <button
+                        key={model}
+                        className="w-full text-left px-3 py-2 text-sm text-[#d9d9d9] hover:bg-[#333]/50 hover:text-white transition-colors"
+                        onClick={() => {
+                          setModelId(model);
+                          setShowModelList(false);
+                        }}
+                      >
+                        {model}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Test Connection */}
-              <div className="pt-2">
+              <div>
                 <button
                   onClick={handleTestConnection}
                   disabled={isTesting || !api_endpoint}
-                  className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${!api_endpoint
-                      ? "bg-[#1a1a1a] text-gray-500 cursor-not-allowed"
-                      : "bg-green-500 text-black hover:bg-green-400 shadow-lg shadow-green-500/20"
-                    }`}
+                  className={`w-full py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                    !api_endpoint
+                      ? "bg-[#454545]/30 text-[#656565] cursor-not-allowed"
+                      : "bg-[#3A9E49]/30 border border-[#3A9E49] text-[#f2f2f2] hover:bg-[#3A9E49]/50"
+                  }`}
                 >
-                  {isTesting ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
-                  {isTesting ? "Verifying/Fetching Models..." : "Test Connection"}
+                  {isTesting ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
+                  {isTesting ? "Testing..." : "Test Connection"}
                 </button>
 
                 {testResult && (
-                  <div className={`mt-4 p-3 rounded-xl border flex items-start gap-3 text-sm ${testResult.success
-                      ? "bg-green-500/10 border-green-500/20 text-green-300"
+                  <div className={`mt-3 p-2.5 rounded-lg border text-xs ${
+                    testResult.success
+                      ? "bg-[#3A9E49]/10 border-[#3A9E49]/20 text-[#d4edda]"
                       : "bg-red-500/10 border-red-500/20 text-red-300"
-                    }`}>
-                    {testResult.success ? <CheckCircle size={18} className="shrink-0 mt-0.5" /> : <AlertCircle size={18} className="shrink-0 mt-0.5" />}
-                    <p>{testResult.message}</p>
+                  }`}>
+                    {testResult.message}
                   </div>
                 )}
               </div>
@@ -225,35 +247,36 @@ export default function ApiSettingsModal() {
             </div>
           )}
 
+          {/* Parameters Tab */}
           {activeTab === "parameters" && (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+            <div className="space-y-6">
 
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-white flex items-center gap-2">
-                  <Sliders size={16} className="text-green-400" />
+                <h3 className="text-sm font-medium text-[#f2f2f2] flex items-center gap-2">
+                  <Sliders size={16} className="text-[#3A9E49]" />
                   Model Parameters
                 </h3>
                 <button
                   onClick={resetParameters}
-                  className="text-xs text-gray-500 hover:text-green-400 transition-colors flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/5"
+                  className="text-xs text-[#8e8e8e] hover:text-[#3A9E49] transition-colors flex items-center gap-1 px-2 py-1 rounded-md hover:bg-[#333]/50"
                 >
-                  <RefreshCw size={12} /> Reset Defaults
+                  <RefreshCw size={12} /> Reset
                 </button>
               </div>
 
               {/* Temperature */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <label className="text-xs font-medium text-[#8e8e8e] flex items-center gap-2">
                     Temperature
                     <div className="group relative">
-                      <Info size={12} className="text-gray-600 hover:text-gray-300 cursor-help" />
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-[#222] border border-white/10 rounded-lg text-[10px] text-gray-300 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        Controls randomness: Lower is deterministic, higher is creative.
+                      <Info size={12} className="text-[#656565] hover:text-[#8e8e8e] cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-[#212121] border border-[#282828] rounded-lg text-[10px] text-[#d9d9d9] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        Controls randomness: lower is deterministic, higher is creative.
                       </div>
                     </div>
                   </label>
-                  <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded">{temperature}</span>
+                  <span className="text-xs font-mono text-[#3A9E49] bg-[#3A9E49]/10 px-2 py-0.5 rounded">{temperature}</span>
                 </div>
                 <input
                   type="range"
@@ -262,9 +285,9 @@ export default function ApiSettingsModal() {
                   step="0.1"
                   value={temperature}
                   onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3A9E49] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
                 />
-                <div className="flex justify-between text-[10px] text-gray-600 font-medium">
+                <div className="flex justify-between text-[10px] text-[#656565]">
                   <span>Precise (0.0)</span>
                   <span>Creative (2.0)</span>
                 </div>
@@ -272,21 +295,21 @@ export default function ApiSettingsModal() {
 
               {/* Max Tokens */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Max Tokens</label>
+                <label className="text-xs font-medium text-[#8e8e8e]">Max Tokens</label>
                 <input
                   type="number"
                   value={max_tokens}
                   onChange={(e) => setMaxTokens(parseInt(e.target.value) || 0)}
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all font-mono"
+                  className="w-full bg-[#212121]/80 border border-[#282828] rounded-lg px-3 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#656565] focus:border-[#3A9E49] outline-none transition-colors font-mono"
                 />
-                <p className="text-[10px] text-gray-600">0 means unlimited (model default)</p>
+                <p className="text-[10px] text-[#656565]">0 means unlimited (model default)</p>
               </div>
 
               {/* Top P */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Top P</label>
-                  <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded">{top_p}</span>
+                  <label className="text-xs font-medium text-[#8e8e8e]">Top P</label>
+                  <span className="text-xs font-mono text-[#3A9E49] bg-[#3A9E49]/10 px-2 py-0.5 rounded">{top_p}</span>
                 </div>
                 <input
                   type="range"
@@ -295,15 +318,15 @@ export default function ApiSettingsModal() {
                   step="0.01"
                   value={top_p}
                   onChange={(e) => setTopP(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3A9E49] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
                 />
               </div>
 
               {/* Frequency Penalty */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Frequency Penalty</label>
-                  <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded">{frequency_penalty}</span>
+                  <label className="text-xs font-medium text-[#8e8e8e]">Frequency Penalty</label>
+                  <span className="text-xs font-mono text-[#3A9E49] bg-[#3A9E49]/10 px-2 py-0.5 rounded">{frequency_penalty}</span>
                 </div>
                 <input
                   type="range"
@@ -312,15 +335,15 @@ export default function ApiSettingsModal() {
                   step="0.1"
                   value={frequency_penalty}
                   onChange={(e) => setFrequencyPenalty(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3A9E49] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
                 />
               </div>
 
-               {/* Presence Penalty */}
-              <div className="space-y-3">
+              {/* Presence Penalty */}
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Presence Penalty</label>
-                  <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded">{presence_penalty}</span>
+                  <label className="text-xs font-medium text-[#8e8e8e]">Presence Penalty</label>
+                  <span className="text-xs font-mono text-[#3A9E49] bg-[#3A9E49]/10 px-2 py-0.5 rounded">{presence_penalty}</span>
                 </div>
                 <input
                   type="range"
@@ -329,13 +352,23 @@ export default function ApiSettingsModal() {
                   step="0.1"
                   value={presence_penalty}
                   onChange={(e) => setPresencePenalty(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                  className="w-full h-1.5 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3A9E49] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
                 />
               </div>
 
             </div>
           )}
         </main>
+
+        {/* Footer */}
+        <footer className="flex justify-end p-4 border-t border-[#3b3b3b]">
+          <button
+            onClick={() => setModal(false)}
+            className="px-4 py-2 bg-[#454545]/30 border border-[#454545] rounded-lg text-[#f2f2f2] text-sm font-medium hover:bg-white/10 transition-colors"
+          >
+            Close
+          </button>
+        </footer>
       </div>
     </div>
   );

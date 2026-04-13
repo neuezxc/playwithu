@@ -195,14 +195,19 @@ You dummy!
           // Get debug store
           const { addLog } = useDebugStore.getState();
 
+          const activePrompt = usePromptStore.getState().getActivePrompt();
+          const systemMsg = currentMessages.find((m) => m.role === "system");
+          const lastUserMsg = [...currentMessages].reverse().find((m) => m.role === "user");
+
           // Log the request
           addLog({
-            type: "api",
-            endpoint: "https://openrouter.ai/api/v1/chat/completions",
-            request: {
-              model: model_id,
-              messages: currentMessages,
-            }
+            characterName: get().character.name,
+            promptName: activePrompt?.name || "Unknown",
+            resolvedSystemPrompt: systemMsg?.content || "",
+            lastUserMessage: lastUserMsg?.content || "",
+            lastAiResponse: "",
+            params: { model: model_id, temperature, max_tokens, top_p },
+            messages: currentMessages,
           });
 
           try {
@@ -231,13 +236,13 @@ You dummy!
 
             // Log the response
             addLog({
-              type: "api",
-              endpoint: "https://openrouter.ai/api/v1/chat/completions",
-              response: data,
-              request: {
-                model: model_id,
-                messages: currentMessages,
-              }
+              characterName: get().character.name,
+              promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+              resolvedSystemPrompt: systemMsg?.content || "",
+              lastUserMessage: lastUserMsg?.content || "",
+              lastAiResponse: text,
+              params: { model: model_id, temperature, max_tokens, top_p },
+              messages: currentMessages,
             });
 
             // Error handling for API response
@@ -266,13 +271,14 @@ You dummy!
           } catch (error) {
             // Log the error
             addLog({
-              type: "api",
-              endpoint: "https://openrouter.ai/api/v1/chat/completions",
+              characterName: get().character.name,
+              promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+              resolvedSystemPrompt: systemMsg?.content || "",
+              lastUserMessage: lastUserMsg?.content || "",
+              lastAiResponse: "",
               error: error.message,
-              request: {
-                model: model_id,
-                messages: currentMessages,
-              }
+              params: { model: model_id, temperature, max_tokens, top_p },
+              messages: currentMessages,
             });
 
             throw error;
@@ -308,13 +314,18 @@ You dummy!
         try {
           const { addLog } = useDebugStore.getState();
 
+          const activePrompt = usePromptStore.getState().getActivePrompt();
+          const systemMsg = contextMessages.find((m) => m.role === "system");
+          const lastUserMsg = [...contextMessages].reverse().find((m) => m.role === "user");
+
           addLog({
-            type: "api",
-            endpoint: "https://openrouter.ai/api/v1/chat/completions",
-            request: {
-              model: model_id,
-              messages: contextMessages,
-            }
+            characterName: get().character.name,
+            promptName: activePrompt?.name || "Unknown",
+            resolvedSystemPrompt: systemMsg?.content || "",
+            lastUserMessage: lastUserMsg?.content || "",
+            lastAiResponse: "",
+            params: { model: model_id, temperature, max_tokens, top_p },
+            messages: contextMessages,
           });
 
           const response = await fetch(
@@ -340,13 +351,13 @@ You dummy!
           const data = await response.json();
 
           addLog({
-            type: "api",
-            endpoint: "https://openrouter.ai/api/v1/chat/completions",
-            response: data,
-            request: {
-              model: model_id,
-              messages: contextMessages,
-            }
+            characterName: get().character.name,
+            promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+            resolvedSystemPrompt: systemMsg?.content || "",
+            lastUserMessage: lastUserMsg?.content || "",
+            lastAiResponse: newContent,
+            params: { model: model_id, temperature, max_tokens, top_p },
+            messages: contextMessages,
           });
 
           if (!response.ok) {

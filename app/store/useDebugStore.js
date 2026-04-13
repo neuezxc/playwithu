@@ -1,34 +1,45 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+const MAX_LOGS = 50;
+
 const useDebugStore = create(
   persist(
     (set, get) => ({
       logs: [],
       isModalOpen: false,
       isEnabled: false,
-      
-      // Add a new log entry
+
       addLog: (log) => set((state) => {
-        // Only add log if debug logging is enabled
         if (!state.isEnabled) return state;
-        
-        return {
-          logs: [...state.logs, {
-            id: Date.now(),
-            timestamp: new Date().toISOString(),
-            ...log
-          }]
+
+        const newEntry = {
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          status: log.error ? "error" : "ok",
+          characterName: log.characterName || "Unknown",
+          promptName: log.promptName || "Unknown",
+          resolvedSystemPrompt: log.resolvedSystemPrompt || "",
+          lastUserMessage: log.lastUserMessage || "",
+          lastAiResponse: log.lastAiResponse || "",
+          params: log.params || { model: "", temperature: 0, max_tokens: 0, top_p: 0 },
+          error: log.error || null,
+          messages: log.messages || [],
         };
+
+        const updatedLogs = [...state.logs, newEntry];
+        // Cap at MAX_LOGS, drop oldest
+        const cappedLogs = updatedLogs.length > MAX_LOGS
+          ? updatedLogs.slice(updatedLogs.length - MAX_LOGS)
+          : updatedLogs;
+
+        return { logs: cappedLogs };
       }),
-      
-      // Clear all logs
+
       clearLogs: () => set({ logs: [] }),
-      
-      // Set modal open state
+
       setModalOpen: (isOpen) => set({ isModalOpen: isOpen }),
-      
-      // Toggle debug logging enabled state
+
       toggleEnabled: () => set((state) => ({ isEnabled: !state.isEnabled })),
     }),
     {

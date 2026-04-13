@@ -7,7 +7,7 @@ import useUserStore from "../store/useUserStore";
 import useMemoryStore from "../store/useMemoryStore";
 import usePromptStore from "../store/usePromptStore";
 import useDebugStore from "../store/useDebugStore";
-import { replacePlaceholders } from "../utils/replacerTemplate";
+import { replacePlaceholders, buildPlaceholderValues } from "../utils/replacerTemplate"
 import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
@@ -67,35 +67,16 @@ export default function SuperInput() {
       setUser({ ...user, message: "" });
 
       // Set loading state
-      setLoading(true);
+      setLoading(true)
 
-      // Get the effective prompt (custom or default)
-      const { getEffectivePrompt } = usePromptStore.getState();
-      const promptTemplate = getEffectivePrompt();
-
-      // Get character and user data for placeholder replacement
-      const { character: charData } = useCharacterStore.getState();
-      const { user: userData } = useUserStore.getState();
-      const { summarizeText } = useMemoryStore.getState();
-      const { patternReplacements } = useCharacterStore.getState();
-
-      // Replace placeholders in the prompt
-      const processedPrompt = replacePlaceholders(promptTemplate, {
-        char: charData.name || "AI Assistant",
-        user: userData.name || "User",
-        char_description: charData.description || "",
-        user_description: userData.description || "",
-        scenario: charData.scenario || "",
-        memory: summarizeText || "",
-        tools: patternReplacements
-          .filter((p) => p.active && p.prompt)
-          .map((p) => p.prompt)
-          .join("\n"),
-      });
+      // Get the active prompt content and build placeholder values
+      const promptContent = usePromptStore.getState().getActivePromptContent()
+      const values = buildPlaceholderValues()
+      const processedPrompt = replacePlaceholders(promptContent, values)
 
       // Update the system prompt in the character store
-      const { updateSystemPrompt } = useCharacterStore.getState();
-      updateSystemPrompt(processedPrompt);
+      const { updateSystemPrompt } = useCharacterStore.getState()
+      updateSystemPrompt(processedPrompt)
 
       // Update the first message in updatedMessage to ensure it has the latest processed prompt
       // The first message should be the system prompt

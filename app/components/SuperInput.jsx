@@ -67,16 +67,18 @@ export default function SuperInput() {
       setUser({ ...user, message: "" });
 
       // Set loading state
-      setLoading(true)
+      setLoading(true);
 
-      // Get the active prompt content and build placeholder values
-      const promptContent = usePromptStore.getState().getActivePromptContent()
-      const values = buildPlaceholderValues()
-      const processedPrompt = replacePlaceholders(promptContent, values)
+      // Build structured debug data before async boundary
+      const promptContent = usePromptStore.getState().getActivePromptContent();
+      const activePrompt = usePromptStore.getState().getActivePrompt();
+      const values = buildPlaceholderValues();
+      const processedPrompt = replacePlaceholders(promptContent, values);
+      const lastUserMsg = user.message;
 
       // Update the system prompt in the character store
-      const { updateSystemPrompt } = useCharacterStore.getState()
-      updateSystemPrompt(processedPrompt)
+      const { updateSystemPrompt } = useCharacterStore.getState();
+      updateSystemPrompt(processedPrompt);
 
       // Update the first message in updatedMessage to ensure it has the latest processed prompt
       // The first message should be the system prompt
@@ -92,12 +94,13 @@ export default function SuperInput() {
 
       // Log the request
       addLog({
-        type: "api",
-        endpoint: "https://openrouter.ai/api/v1/chat/completions",
-        request: {
-          model: model_id,
-          messages: messagesWithPrompt,
-        }
+        characterName: character.name,
+        promptName: activePrompt?.name || "Unknown",
+        resolvedSystemPrompt: processedPrompt,
+        lastUserMessage: lastUserMsg,
+        lastAiResponse: "",
+        params: { model: model_id, temperature, max_tokens, top_p },
+        messages: messagesWithPrompt,
       });
 
       try {
@@ -123,17 +126,6 @@ export default function SuperInput() {
 
         const data = await response.json();
 
-        // Log the response
-        addLog({
-          type: "api",
-          endpoint: "https://openrouter.ai/api/v1/chat/completions",
-          response: data,
-          request: {
-            model: model_id,
-            messages: messagesWithPrompt,
-          }
-        });
-
         // Error handling for API response
         if (!response.ok) {
           throw new Error(data.error?.message || "API request failed");
@@ -143,6 +135,17 @@ export default function SuperInput() {
         }
 
         const text = data.choices[0].message.content;
+
+        // Log the response
+        addLog({
+          characterName: character.name,
+          promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+          resolvedSystemPrompt: processedPrompt,
+          lastUserMessage: lastUserMsg,
+          lastAiResponse: text,
+          params: { model: model_id, temperature, max_tokens, top_p },
+          messages: messagesWithPrompt,
+        });
 
         setCharacter({
           ...character,
@@ -157,13 +160,14 @@ export default function SuperInput() {
       } catch (error) {
         // Log the error
         addLog({
-          type: "api",
-          endpoint: "https://openrouter.ai/api/v1/chat/completions",
+          characterName: character.name,
+          promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+          resolvedSystemPrompt: processedPrompt,
+          lastUserMessage: lastUserMsg,
+          lastAiResponse: "",
           error: error.message,
-          request: {
-            model: model_id,
-            messages: messagesWithPrompt,
-          }
+          params: { model: model_id, temperature, max_tokens, top_p },
+          messages: messagesWithPrompt,
         });
 
         throw error;

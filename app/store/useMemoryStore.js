@@ -8,6 +8,7 @@ const useMemoryStore = create(
     (set, get) => ({
       summarizeText: "",
       autoSummarize: false,
+      summarizeInterval: 10,
       memoryPrompt: `
 You are neue, an AI assistant specialized in maintaining narrative continuity and world-building consistency. When I provide new narrative content, you will update our shared memory block to track the evolving story.
 
@@ -76,11 +77,15 @@ Recent Events (Detailed log of last 5 interactions)
 
       setSummarizeText: (text) => set({ summarizeText: text }),
       setAutoSummarize: (enabled) => set({ autoSummarize: enabled }),
+      setSummarizeInterval: (interval) => set({ summarizeInterval: interval }),
       setMemoryPrompt: (prompt) => set({ memoryPrompt: prompt }),
       setModal: (modal) => set({ modal: modal }),
       setActive: (active) => set({ active: active }),
       setLoading: (loading) => set({ loading: loading }),
-      reset: () => set({ summarizeText: "", active: false, snapshots: [] }),
+      reset: () => {
+        set({ summarizeText: "", active: false, snapshots: [] })
+        useCharacterStore.getState().refreshSystemPrompt()
+      },
 
       // Snapshot Actions
       addSnapshot: () => {
@@ -121,7 +126,7 @@ Recent Events (Detailed log of last 5 interactions)
 
         try {
           // Access other stores
-          const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
+          const { api_endpoint, api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
           const { character } = useCharacterStore.getState();
 
           // Format messages
@@ -136,43 +141,60 @@ Recent Events (Detailed log of last 5 interactions)
             finalPrompt += `\n\nCURRENT MEMORY BLOCK:\n${summarizeText}\n\nUPDATE THE ABOVE MEMORY WITH THE NEW CONTEXT BELOW.`;
           }
 
+          const fetchUrl = api_endpoint;
+          
+          const headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Title": "PlayWithU",
+            "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "http://localhost:3000",
+          };
+          if (api_key) {
+            const cleanKey = api_key.startsWith('Bearer ') ? api_key.substring(7) : api_key;
+            headers["Authorization"] = `Bearer ${cleanKey}`;
+          }
+
+          const body = {
+            model: model_id,
+            messages: [
+              {
+                role: "system",
+                content: finalPrompt,
+              },
+              {
+                role: "user",
+                content: formattedOutput,
+              },
+            ],
+            temperature: temperature,
+            top_p: top_p,
+          };
+
+          if (max_tokens > 0) body.max_tokens = max_tokens;
+          if (frequency_penalty !== 0) body.frequency_penalty = frequency_penalty;
+          if (presence_penalty !== 0) body.presence_penalty = presence_penalty;
+
           const response = await fetch(
-            "https://openrouter.ai/api/v1/chat/completions",
+            fetchUrl,
             {
               method: "POST",
-              headers: {
-                Authorization: `Bearer ${api_key}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: model_id,
-                messages: [
-                  {
-                    role: "system",
-                    content: finalPrompt,
-                  },
-                  {
-                    role: "user",
-                    content: formattedOutput,
-                  },
-                ],
-                temperature: temperature,
-                max_tokens: max_tokens,
-                top_p: top_p,
-                frequency_penalty: frequency_penalty,
-                presence_penalty: presence_penalty,
-              }),
+              headers,
+              body: JSON.stringify(body),
             }
           );
 
-          const data = await response.json();
+          const data = await response.json().catch(() => ({}));
 
           if (!response.ok) {
-            throw new Error(data.error?.message || "Failed to generate summary");
+            const errorMessage = data.error?.message || response.statusText || "Failed to generate summary";
+            throw new Error(`${errorMessage} (${response.status})`);
           }
 
           const text = data.choices[0].message.content;
           set({ summarizeText: text });
+
+          // Refresh the system prompt so {{memory}} resolves to the new text
+          useCharacterStore.getState().refreshSystemPrompt();
 
           // Auto-save snapshot on successful generation
           get().addSnapshot();

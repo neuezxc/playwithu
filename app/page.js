@@ -26,7 +26,7 @@ export default function Home() {
     (state) => state.updateSystemPrompt
   );
   const activePromptContent = usePromptStore(state => state.getActivePromptContent())
-  const { autoSummarize, generateSummary } = useMemoryStore();
+  const { autoSummarize, generateSummary, summarizeInterval } = useMemoryStore();
 
   useEffect(() => {
     initializeMessage();
@@ -38,11 +38,11 @@ export default function Home() {
 
   // Auto-summarize trigger
   useEffect(() => {
-    if (autoSummarize && messageCount > 0 && messageCount % 10 === 0) {
+    if (autoSummarize && messageCount > 0 && messageCount % summarizeInterval === 0) {
       console.log("Auto-summarizing...");
       generateSummary();
     }
-  }, [messageCount, autoSummarize, generateSummary]);
+  }, [messageCount, autoSummarize, generateSummary, summarizeInterval]);
 
   return (
     <div className="flex flex-col items-center w-full h-[100dvh] bg-[#151615] text-[#E4E4E4] font-sans overflow-hidden">

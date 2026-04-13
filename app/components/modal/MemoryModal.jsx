@@ -1,265 +1,348 @@
 'use client'
-import React, { useState, useEffect } from "react";
-import { X, Save, History, Settings, Brain, RotateCcw, Trash2, AlertTriangle, FileText, Sparkles } from "lucide-react";
+import React, { useState, useEffect } from 'react'
+import {
+  X, Save, History, Settings, Brain, RotateCcw,
+  Trash2, AlertTriangle, FileText, Sparkles, Timer
+} from 'lucide-react'
 
-import useMemoryStore from "@/app/store/useMemoryStore";
-import useCharacterStore from "@/app/store/useCharacterStore";
-import usePromptStore from "@/app/store/usePromptStore";
+import useMemoryStore from '@/app/store/useMemoryStore'
+import useCharacterStore from '@/app/store/useCharacterStore'
+import usePromptStore from '@/app/store/usePromptStore'
 
 export default function MemoryModal() {
   const {
     modal, setModal,
     summarizeText, setSummarizeText,
-    loading, setLoading,
+    loading,
     generateSummary,
     active, setActive,
     reset,
     autoSummarize, setAutoSummarize,
+    summarizeInterval, setSummarizeInterval,
     memoryPrompt, setMemoryPrompt,
     snapshots, restoreSnapshot, deleteSnapshot
-  } = useMemoryStore();
+  } = useMemoryStore()
 
-  const { updateSystemPrompt } = useCharacterStore((state) => state);
+  const refreshSystemPrompt = useCharacterStore(state => state.refreshSystemPrompt)
   const activePromptContent = usePromptStore(state => state.getActivePromptContent())
 
-  const [activeTab, setActiveTab] = useState("memory"); // memory, settings, history
-  const [hasMemoryPlaceholder, setHasMemoryPlaceholder] = useState(true);
+  const [activeTab, setActiveTab] = useState('memory')
+  const [hasMemoryPlaceholder, setHasMemoryPlaceholder] = useState(true)
 
   useEffect(() => {
     setHasMemoryPlaceholder(activePromptContent.includes('{{memory}}'))
   }, [activePromptContent])
 
   const handleSave = () => {
-    if (!summarizeText) return;
-    updateSystemPrompt(activePromptContent.replace('{{memory}}', summarizeText))
-    setActive(true);
-    setModal(false);
-  };
+    setActive(true)
+    refreshSystemPrompt()
+    setModal(false)
+  }
 
-  if (!modal) return null;
+  const handleReset = () => {
+    reset()
+    setModal(false)
+  }
+
+  const navItems = [
+    { id: 'memory', label: 'Memory', icon: Brain },
+    { id: 'config', label: 'Config', icon: Settings },
+    { id: 'history', label: 'History', icon: History },
+  ]
+
+  if (!modal) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all duration-300">
-      <div className="w-full h-full md:h-[85vh] max-w-5xl rounded-2xl shadow-2xl flex flex-col font-sans border border-white/10 bg-[#121212] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-        {/* Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#181818]">
-          <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <div className="p-1.5 bg-green-500/10 rounded-lg">
-              <Brain size={18} className="text-green-400" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div
+        className="w-full max-w-2xl h-[85vh] md:h-[600px] bg-[#0d0d0d]/90 rounded-2xl border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Sidebar Navigation */}
+        <aside className="w-full md:w-48 border-b md:border-b-0 md:border-r border-white/5 bg-black/20 flex flex-row md:flex-col p-2 md:p-4 shrink-0 items-center md:items-stretch overflow-x-auto scrollbar-hide">
+          {/* Logo */}
+          <div className="hidden md:flex items-center gap-2 px-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3A9E49] to-[#2d7a39] flex items-center justify-center shadow-lg shadow-[#3A9E49]/20">
+              <Brain size={18} className="text-white" />
             </div>
-            Memory Manager
-          </h2>
-          <button
-            onClick={() => setModal(false)}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </header>
-
-        {/* Tabs */}
-        <div className="px-6 pt-4 pb-0 border-b border-white/5 bg-[#121212]">
-          <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
-            <button
-              onClick={() => setActiveTab("memory")}
-              className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 whitespace-nowrap ${activeTab === "memory" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
-                }`}
-            >
-              <FileText size={16} />
-              Current Memory
-              {activeTab === "memory" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 whitespace-nowrap ${activeTab === "settings" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
-                }`}
-            >
-              <Settings size={16} />
-              Settings
-              {activeTab === "settings" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 whitespace-nowrap ${activeTab === "history" ? "text-green-400" : "text-gray-400 hover:text-gray-200"
-                }`}
-            >
-              <History size={16} />
-              Snapshots
-              {activeTab === "history" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 rounded-t-full" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-hidden flex flex-col bg-[#121212]">
-
-          {!hasMemoryPlaceholder && (
-            <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-4 flex items-start gap-3 text-yellow-200 text-sm">
-              <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-              <span>
-                <strong>Warning:</strong> The <code>{"{{memory}}"}</code> placeholder is missing from your System Prompt. Memory will not be injected into the conversation.
-              </span>
-            </div>
-          )}
-
-          {activeTab === "memory" && (
-            <div className="flex-1 flex flex-col p-6 gap-4 overflow-hidden animate-in slide-in-from-left-4 duration-300">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                  <Brain size={14} />
-                  Memory Content
-                </label>
-                <button
-                  onClick={generateSummary}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 rounded-xl text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Sparkles size={14} />}
-                  {loading ? "Generating..." : "Generate Summary"}
-                </button>
-              </div>
-
-              <textarea
-                className="flex-1 w-full min-h-[400px] p-4 bg-[#1a1a1a] border border-white/10 rounded-xl text-white font-mono text-sm resize-none outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all leading-relaxed placeholder:text-gray-600"
-                value={summarizeText}
-                onChange={(e) => setSummarizeText(e.target.value)}
-                placeholder="Memory is empty. Generate one or type manually..."
-                spellCheck={false}
-              />
-            </div>
-          )}
-
-          {activeTab === "settings" && (
-            <div className="flex-1 flex flex-col p-6 gap-6 overflow-y-auto animate-in slide-in-from-right-4 duration-300">
-
-              {/* Auto Summarize Toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#1a1a1a] border border-white/10 rounded-xl">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-white">Auto-Summarize</span>
-                  <span className="text-xs text-gray-500">Automatically update memory every 10 messages</span>
-                </div>
-                <button
-                  onClick={() => setAutoSummarize(!autoSummarize)}
-                  className={`relative w-12 h-7 rounded-full transition-colors ${autoSummarize ? "bg-green-500" : "bg-[#333]"
-                    }`}
-                >
-                  <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform ${autoSummarize ? "translate-x-5" : "translate-x-0"
-                    }`} />
-                </button>
-              </div>
-
-              {/* Memory Prompt Editor */}
-              <div className="flex flex-col gap-2 flex-1">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                  <FileText size={14} />
-                  Memory Generation Prompt
-                </label>
-                <p className="text-xs text-gray-500 mb-2">Instructions for the AI on how to summarize and structure the memory.</p>
-                <textarea
-                  className="w-full flex-1 min-h-[400px] p-4 bg-[#1a1a1a] border border-white/10 rounded-xl text-gray-300 font-mono text-sm resize-none outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-gray-600"
-                  value={memoryPrompt}
-                  onChange={(e) => setMemoryPrompt(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          {activeTab === "history" && (
-            <div className="flex-1 flex flex-col p-6 overflow-hidden animate-in slide-in-from-right-4 duration-300">
-              <div className="flex flex-col gap-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                {snapshots.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-gray-500 gap-3">
-                    <History size={48} strokeWidth={1} className="opacity-50" />
-                    <p className="text-sm">No snapshots available yet.</p>
-                  </div>
-                ) : (
-                  snapshots.map((snap) => (
-                    <div key={snap.id} className="p-4 bg-[#1a1a1a] border border-white/10 rounded-xl flex flex-col gap-3 group hover:border-green-500/30 transition-all">
-                      <div className="flex justify-between items-start">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-white">
-                            {new Date(snap.timestamp).toLocaleString()}
-                          </span>
-                          <span className="text-[10px] text-gray-500 font-mono mt-0.5">
-                            {snap.content.length} chars
-                          </span>
-                        </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => restoreSnapshot(snap.id)}
-                            className="p-2 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
-                            title="Restore this version"
-                          >
-                            <RotateCcw size={16} />
-                          </button>
-                          <button
-                            onClick={() => deleteSnapshot(snap.id)}
-                            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-400 line-clamp-2 font-mono bg-[#121212] p-3 rounded-lg border border-white/5">
-                        {snap.content}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-        </main>
-
-        {/* Footer */}
-        <footer className="flex flex-col md:flex-row justify-between items-center gap-4 px-6 py-4 border-t border-white/5 bg-[#181818]">
-          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-            {active ? (
-              <span className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                Memory Active
-              </span>
-            ) : (
-              <span className="flex items-center gap-2 text-xs text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full border border-yellow-500/20">
-                <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                Memory Inactive
-              </span>
-            )}
-            <button
-              onClick={reset}
-              className="text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-1.5"
-            >
-              <Trash2 size={12} /> Reset All
-            </button>
+            <span className="font-bold text-[#f2f2f2] tracking-tight">Memory</span>
           </div>
 
-          <div className="flex gap-3 w-full md:w-auto">
+          {/* Status Badge */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 mb-4 rounded-xl bg-white/[0.02] border border-white/5">
+            <span className={`w-2 h-2 rounded-full ${active ? 'bg-[#3A9E49] animate-pulse' : 'bg-yellow-500'}`} />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${active ? 'text-[#3A9E49]' : 'text-yellow-500'}`}>
+              {active ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+
+          <nav className="flex flex-row md:flex-col gap-1.5 flex-1 min-w-0">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-3 px-3 py-2 md:py-2.5 rounded-xl text-sm font-medium transition-all group whitespace-nowrap ${
+                  activeTab === item.id
+                    ? 'bg-[#3A9E49]/10 text-[#3A9E49] border border-[#3A9E49]/20 shadow-inner'
+                    : 'text-[#8e8e8e] hover:text-[#f2f2f2] hover:bg-white/5'
+                }`}
+              >
+                <item.icon size={16} className={activeTab === item.id ? 'text-[#3A9E49]' : 'group-hover:text-[#f2f2f2]'} />
+                <span className="md:inline">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Bottom Actions */}
+          <div className="hidden md:flex flex-col gap-1.5 mt-4">
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all"
+            >
+              <Trash2 size={14} />
+              <span>Reset All</span>
+            </button>
             <button
               onClick={() => setModal(false)}
-              className="flex-1 md:flex-none px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#8e8e8e] hover:text-white hover:bg-white/5 transition-all"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-green-500 hover:bg-green-400 text-black font-semibold rounded-xl text-sm transition-all shadow-lg shadow-green-500/20"
-            >
-              <Save size={16} />
-              Save & Activate
+              <X size={16} />
+              <span>Close</span>
             </button>
           </div>
-        </footer>
+        </aside>
 
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-b from-white/[0.02] to-transparent overflow-hidden">
+          {/* Header */}
+          <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 border-b border-white/5 shrink-0">
+            <h2 className="text-sm font-semibold text-white flex items-center gap-2 capitalize">
+              {activeTab === 'memory' && 'Memory Content'}
+              {activeTab === 'config' && 'Configuration'}
+              {activeTab === 'history' && 'Snapshots'}
+            </h2>
+            <div className="flex gap-2 items-center">
+              {/* Mobile status */}
+              <div className="md:hidden flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[#3A9E49] animate-pulse' : 'bg-yellow-500'}`} />
+                <span className={`text-[9px] font-bold uppercase tracking-wider ${active ? 'text-[#3A9E49]' : 'text-yellow-500'}`}>
+                  {active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              {summarizeText && (
+                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-[#656565] font-bold">
+                  {summarizeText.length} chars
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* Warning Banner */}
+          {!hasMemoryPlaceholder && (
+            <div className="flex items-start gap-3 px-4 md:px-6 py-3 bg-yellow-500/5 border-b border-yellow-500/10 animate-in slide-in-from-top-2">
+              <AlertTriangle size={14} className="shrink-0 mt-0.5 text-yellow-500" />
+              <span className="text-[11px] text-yellow-500/80 leading-relaxed">
+                <strong>Missing placeholder:</strong> Add <code className="bg-yellow-500/10 px-1 rounded text-yellow-400">{'{{memory}}'}</code> to your System Prompt for memory injection.
+              </span>
+            </div>
+          )}
+
+          {/* Scrollable Content */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide">
+            <div className="max-w-md mx-auto animate-in slide-in-from-bottom-2 duration-300">
+
+              {/* Memory Tab */}
+              {activeTab === 'memory' && (
+                <div className="flex flex-col gap-4 h-full">
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-[#656565] group-focus-within:text-[#3A9E49] transition-colors flex items-center gap-2">
+                      <Brain size={12} />
+                      Memory Block
+                    </label>
+                    <textarea
+                      className="w-full min-h-[320px] md:min-h-[360px] bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#f2f2f2] placeholder:text-[#454545] focus:border-[#3A9E49]/50 focus:bg-[#3A9E49]/5 outline-none transition-all font-mono resize-none leading-relaxed"
+                      value={summarizeText}
+                      onChange={(e) => setSummarizeText(e.target.value)}
+                      placeholder="Memory is empty. Generate one or type manually..."
+                      spellCheck={false}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Generate Button */}
+                  <button
+                    onClick={generateSummary}
+                    disabled={loading}
+                    className={`w-full py-3 md:py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
+                      loading
+                        ? 'bg-white/5 text-[#656565] cursor-not-allowed border border-white/5'
+                        : 'bg-[#3A9E49] text-white hover:bg-[#43b654] shadow-lg shadow-[#3A9E49]/20 border border-white/10'
+                    }`}
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Sparkles size={18} />
+                    )}
+                    {loading ? 'Generating...' : 'Generate Summary'}
+                  </button>
+                </div>
+              )}
+
+              {/* Config Tab */}
+              {activeTab === 'config' && (
+                <div className="space-y-6 md:space-y-8">
+                  {/* Auto-Summarize Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-[#f2f2f2]">Auto-Summarize</span>
+                      <span className="text-[10px] text-[#656565]">Automatically update memory during chat</span>
+                    </div>
+                    <button
+                      onClick={() => setAutoSummarize(!autoSummarize)}
+                      className={`relative w-12 h-7 rounded-full transition-colors ${
+                        autoSummarize ? 'bg-[#3A9E49]' : 'bg-[#333]'
+                      }`}
+                    >
+                      <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform ${
+                        autoSummarize ? 'translate-x-5' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+
+                  {/* Summarize Interval */}
+                  <div className="space-y-3 group">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-[#8e8e8e] transition-colors group-hover:text-[#3A9E49]">
+                          Message Interval
+                        </label>
+                        <Timer size={12} className="text-[#333] hover:text-[#3A9E49] cursor-help transition-colors" />
+                      </div>
+                      <span className="text-[11px] md:text-xs font-bold font-mono text-white bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">
+                        {summarizeInterval}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      step="5"
+                      value={summarizeInterval}
+                      onChange={(e) => setSummarizeInterval(parseInt(e.target.value))}
+                      className="w-full h-1 bg-[#222] rounded-lg appearance-none cursor-pointer outline-none accent-[#3A9E49] hover:accent-[#43b654] transition-all"
+                    />
+                    <div className="flex justify-between text-[8px] md:text-[9px] text-[#454545] font-bold uppercase tracking-widest px-0.5">
+                      <span>Frequent</span>
+                      <span>Balanced</span>
+                      <span>Rare</span>
+                    </div>
+                  </div>
+
+                  {/* Memory Prompt Editor */}
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-[#656565] group-focus-within:text-[#3A9E49] transition-colors flex items-center gap-2">
+                      <FileText size={12} />
+                      Generation Prompt
+                    </label>
+                    <p className="text-[9px] md:text-[10px] text-[#656565] px-1 italic">
+                      Instructions for the AI on how to summarize and structure the memory.
+                    </p>
+                    <textarea
+                      className="w-full min-h-[280px] bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#a1a1a1] placeholder:text-[#454545] focus:border-[#3A9E49]/50 focus:bg-[#3A9E49]/5 outline-none transition-all font-mono resize-none leading-relaxed"
+                      value={memoryPrompt}
+                      onChange={(e) => setMemoryPrompt(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* History Tab */}
+              {activeTab === 'history' && (
+                <div className="flex flex-col gap-3">
+                  {snapshots.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-[#656565] gap-3">
+                      <History size={48} strokeWidth={1} className="opacity-30" />
+                      <p className="text-sm">No snapshots yet.</p>
+                      <p className="text-[10px] text-[#454545]">Snapshots are saved automatically after generation.</p>
+                    </div>
+                  ) : (
+                    snapshots.map((snap) => (
+                      <div key={snap.id} className="p-4 bg-white/[0.03] border border-white/10 rounded-xl flex flex-col gap-3 group hover:border-[#3A9E49]/20 transition-all">
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-[#f2f2f2]">
+                              {new Date(snap.timestamp).toLocaleString()}
+                            </span>
+                            <span className="text-[9px] text-[#656565] font-mono mt-0.5">
+                              {snap.content.length} chars
+                            </span>
+                          </div>
+                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => restoreSnapshot(snap.id)}
+                              className="p-2 text-[#3A9E49] hover:bg-[#3A9E49]/10 rounded-lg transition-colors"
+                              title="Restore this version"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                            <button
+                              onClick={() => deleteSnapshot(snap.id)}
+                              className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-[11px] text-[#8e8e8e] line-clamp-2 font-mono bg-black/20 p-3 rounded-lg border border-white/5">
+                          {snap.content}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+            </div>
+          </main>
+
+          {/* Sticky Save Button */}
+          <div className="px-4 md:px-6 py-3 border-t border-white/5 bg-[#0d0d0d]/80 backdrop-blur-sm shrink-0">
+            <div className="max-w-md mx-auto flex gap-3">
+              {/* Mobile-only reset and close */}
+              <button
+                onClick={handleReset}
+                className="md:hidden p-2.5 text-red-400/60 hover:text-red-400 hover:bg-red-500/5 rounded-xl transition-colors border border-white/5"
+                title="Reset All"
+              >
+                <Trash2 size={16} />
+              </button>
+              <button
+                onClick={() => setModal(false)}
+                className="md:hidden p-2.5 text-[#8e8e8e] hover:text-white hover:bg-white/5 rounded-xl transition-colors border border-white/5"
+              >
+                <X size={16} />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!summarizeText}
+                className={`flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                  !summarizeText
+                    ? 'bg-white/5 text-[#454545] cursor-not-allowed border border-white/5'
+                    : 'bg-[#3A9E49] text-white hover:bg-[#43b654] shadow-lg shadow-[#3A9E49]/20 border border-white/10'
+                }`}
+              >
+                <Save size={16} />
+                Save & Activate
+              </button>
+            </div>
+          </div>
+
+          {/* Footer Blur Edge */}
+          <div className="h-0 bg-gradient-to-t from-[#0d0d0d] to-transparent pointer-events-none" />
+        </div>
       </div>
     </div>
-  );
+  )
 }

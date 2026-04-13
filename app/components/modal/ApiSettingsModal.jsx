@@ -5,6 +5,7 @@ import useApiSettingStore from "@/app/store/useApiSettingStore";
 
 export default function ApiSettingsModal() {
   const {
+    api_endpoint,
     api_key,
     model_id,
     temperature,
@@ -14,6 +15,7 @@ export default function ApiSettingsModal() {
     presence_penalty
   } = useApiSettingStore();
 
+  const setApiEndpoint = useApiSettingStore((state) => state.setApiEndpoint);
   const setModal = useApiSettingStore((state) => state.setModal);
   const setApiKey = useApiSettingStore((state) => state.setApiKey);
   const setModelId = useApiSettingStore((state) => state.setModelId);
@@ -29,29 +31,38 @@ export default function ApiSettingsModal() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null); // { success: boolean, message: string }
   const [showModelList, setShowModelList] = useState(false);
-
-  const popularModels = [
-    "openrouter/auto",
-    "anthropic/claude-3.5-sonnet",
-    "google/gemini-pro-1.5",
-    "meta-llama/llama-3-70b-instruct",
-    "mistralai/mixtral-8x7b-instruct",
-    "openai/gpt-4o"
-  ];
+  const [fetchedModels, setFetchedModels] = useState([]);
 
   const handleTestConnection = async () => {
     setIsTesting(true);
     setTestResult(null);
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/models", {
+      const formatUrl = api_endpoint.endsWith('/') ? api_endpoint.slice(0, -1) : api_endpoint;
+      const response = await fetch(`${formatUrl}/models`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${api_key}`,
+          "Content-Type": "application/json"
         }
       });
 
       if (response.ok) {
-        setTestResult({ success: true, message: "Connection successful!" });
+        const data = await response.json();
+        
+        let modelsArray = [];
+        if (Array.isArray(data.data)) {
+          modelsArray = data.data;
+        } else if (data.data && Array.isArray(data.data.data)) {
+          modelsArray = data.data.data;
+        } else if (Array.isArray(data)) {
+          modelsArray = data;
+        }
+
+        const parsedModels = modelsArray.map(model => (typeof model === 'string' ? model : model.id)).filter(Boolean);
+
+        setTestResult({ success: true, message: "Connection successful! Models refreshed." });
+        setFetchedModels(parsedModels);
+        setShowModelList(parsedModels.length > 0);
       } else {
         const errorData = await response.json().catch(() => ({}));
         setTestResult({ success: false, message: errorData.error?.message || "Connection failed" });
@@ -115,16 +126,17 @@ export default function ApiSettingsModal() {
           {activeTab === "connection" && (
             <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
 
-              {/* Provider Selection (Visual only for now as mostly OpenRouter focused) */}
+              {/* Base URL */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Provider</label>
-                <div className="flex gap-3">
-                  <button className="flex-1 py-3 px-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-300 font-medium text-sm flex items-center justify-center gap-2 transition-all">
-                    OpenRouter
-                  </button>
-                  <button className="flex-1 py-3 px-4 bg-[#1a1a1a] border border-white/5 rounded-xl text-gray-500 font-medium text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
-                    Others (Soon)
-                  </button>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Base URL</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={api_endpoint || ""}
+                    onChange={(e) => setApiEndpoint(e.target.value)}
+                    placeholder="e.g. https://openrouter.ai/api/v1"
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all font-mono"
+                  />
                 </div>
               </div>
 
@@ -157,16 +169,16 @@ export default function ApiSettingsModal() {
                 <div className="relative">
                   <input
                     type="text"
-                    value={model_id}
+                    value={model_id || ""}
                     onChange={(e) => setModelId(e.target.value)}
-                    onFocus={() => setShowModelList(true)}
+                    onFocus={() => { if (fetchedModels.length > 0) setShowModelList(true); }}
                     onBlur={() => setTimeout(() => setShowModelList(false), 200)}
                     placeholder="e.g. anthropic/claude-3.5-sonnet"
                     className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all font-mono"
                   />
-                  {showModelList && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1">
-                      {popularModels.map((model) => (
+                  {showModelList && fetchedModels.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1 scrollbar-thin scrollbar-thumb-white/10">
+                      {fetchedModels.map((model) => (
                         <button
                           key={model}
                           className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2"
@@ -175,27 +187,28 @@ export default function ApiSettingsModal() {
                             setShowModelList(false);
                           }}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
-                          {model}
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-green-500/50"></span>
+                          <span className="truncate">{model}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
+                {fetchedModels.length === 0 && <p className="text-[10px] text-gray-500">Test Connection to fetch available models, or type manually.</p>}
               </div>
 
               {/* Test Connection */}
               <div className="pt-2">
                 <button
                   onClick={handleTestConnection}
-                  disabled={isTesting || !api_key}
-                  className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${!api_key
+                  disabled={isTesting || !api_endpoint}
+                  className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${!api_endpoint
                       ? "bg-[#1a1a1a] text-gray-500 cursor-not-allowed"
                       : "bg-green-500 text-black hover:bg-green-400 shadow-lg shadow-green-500/20"
                     }`}
                 >
                   {isTesting ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
-                  {isTesting ? "Verifying..." : "Test Connection"}
+                  {isTesting ? "Verifying/Fetching Models..." : "Test Connection"}
                 </button>
 
                 {testResult && (
@@ -303,7 +316,7 @@ export default function ApiSettingsModal() {
                 />
               </div>
 
-              {/* Presence Penalty */}
+               {/* Presence Penalty */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Presence Penalty</label>

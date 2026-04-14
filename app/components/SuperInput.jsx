@@ -188,6 +188,11 @@ export default function SuperInput() {
           ],
         });
       } catch (error) {
+        if (error.name === "AbortError") {
+          // User cancelled the request intentionally — skip error logging
+          throw error;
+        }
+
         // Log the error
         addLog({
           characterName: character.name,

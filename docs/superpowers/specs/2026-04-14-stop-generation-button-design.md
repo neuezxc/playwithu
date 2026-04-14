@@ -29,7 +29,7 @@ Replace the green send button with a red stop button while the API call is in fl
 
 **handleMessage() changes:**
 - At the start of the fetch block, create `new AbortController()` and store it in the ref
-- Pass `{ signal: controller.signal }` as the 4th argument to `fetch()`
+- Add `signal: controller.signal` to the existing fetch options object (the second argument to `fetch`)
 - In the `catch` block, check for `error.name === 'AbortError'` — if true, skip error logging and just reset loading
 - In the `finally` block, null out the ref
 

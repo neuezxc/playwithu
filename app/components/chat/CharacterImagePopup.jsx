@@ -11,7 +11,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     const initialImgSize = useRef({ width: 0, height: 0 });
     const aspectRatio = useRef(null);
     const dragStartTimeout = useRef(null);
-    const pendingDragStart = useRef({ x: 0, y: 0 });
     const [isPressing, setIsPressing] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [animationReady, setAnimationReady] = useState(false);
@@ -148,7 +147,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     }, [isDragging, isResizing]);
 
     const startDragDelay = (clientX, clientY) => {
-        pendingDragStart.current = { x: clientX, y: clientY };
         setIsPressing(true);
 
         dragStartTimeout.current = setTimeout(() => {

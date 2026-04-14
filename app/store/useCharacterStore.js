@@ -274,11 +274,16 @@ You dummy!
 
               const chunk = decoder.decode(value, { stream: true });
               const lines = chunk.split("\n");
+              let streamingDone = false;
 
               for (const line of lines) {
+                if (streamingDone) break;
                 if (!line.startsWith("data:")) continue;
                 const data = line.slice(5).trim();
-                if (data === "[DONE]") break;
+                if (data === "[DONE]") {
+                  streamingDone = true;
+                  break;
+                }
 
                 try {
                   const parsed = JSON.parse(data);
@@ -304,6 +309,7 @@ You dummy!
                   // Skip invalid JSON
                 }
               }
+              if (streamingDone) break;
             }
 
             // Log the response
@@ -436,11 +442,16 @@ You dummy!
 
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split("\n");
+            let streamingDone = false;
 
             for (const line of lines) {
+              if (streamingDone) break;
               if (!line.startsWith("data:")) continue;
               const data = line.slice(5).trim();
-              if (data === "[DONE]") break;
+              if (data === "[DONE]") {
+                streamingDone = true;
+                break;
+              }
 
               try {
                 const parsed = JSON.parse(data);
@@ -476,6 +487,7 @@ You dummy!
                 // Skip invalid JSON
               }
             }
+            if (streamingDone) break;
           }
 
           addLog({

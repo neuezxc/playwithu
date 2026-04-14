@@ -51,6 +51,7 @@ export default function SuperInput() {
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
+    if (isLoading) return;
     if (user.message.startsWith("/")) {
       const command = user.message.trim().toLowerCase();
       if (command === "/reset") {
@@ -186,12 +187,14 @@ export default function SuperInput() {
 
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n");
+          let streamingDone = false;
 
           for (const line of lines) {
+            if (streamingDone) break;
             if (!line.startsWith("data:")) continue;
             const data = line.slice(5).trim();
             if (data === "[DONE]") {
-              // Exit both loops
+              streamingDone = true;
               break;
             }
 
@@ -210,6 +213,7 @@ export default function SuperInput() {
               // Skip invalid JSON lines — common in streaming
             }
           }
+          if (streamingDone) break;
         }
 
         // Log the final response

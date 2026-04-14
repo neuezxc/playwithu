@@ -141,6 +141,7 @@ export default function SuperInput() {
           messages: messagesWithPrompt,
           temperature: temperature,
           top_p: top_p,
+          stream: true,
         };
 
         if (max_tokens > 0) body.max_tokens = max_tokens;
@@ -157,41 +158,62 @@ export default function SuperInput() {
           }
         );
 
-        const data = await response.json().catch(() => ({}));
-
-        // Error handling for API response
+        // Handle non-streaming error responses (e.g., 401, 400)
         if (!response.ok) {
-          const errorMessage = data.error?.message || response.statusText || "API request failed";
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error?.message || response.statusText || "API request failed";
           throw new Error(`${errorMessage} (${response.status})`);
         }
-        if (!data.choices || data.choices.length === 0) {
-          throw new Error("No choices returned from API");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedText = "";
+
+        // Add placeholder assistant message so the UI shows the bubble
+        setCharacter({
+          ...character,
+          messages: [...messagesWithPrompt, { role: "assistant", content: "" }],
+        });
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") break;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content || "";
+              if (content) {
+                accumulatedText += content;
+                setCharacter({
+                  ...character,
+                  messages: [...messagesWithPrompt, { role: "assistant", content: accumulatedText }],
+                });
+              }
+            } catch {
+              // Skip invalid JSON lines — common in streaming
+            }
+          }
         }
 
-        const text = data.choices[0].message.content;
-
-        // Log the response
+        // Log the final response
         addLog({
           characterName: character.name,
           promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
           resolvedSystemPrompt: processedPrompt,
           lastUserMessage: lastUserMsg,
-          lastAiResponse: text,
+          lastAiResponse: accumulatedText,
           url: fetchUrl,
           headers: headers,
           params: { model: model_id, temperature, max_tokens, top_p },
           messages: messagesWithPrompt,
-        });
-
-        setCharacter({
-          ...character,
-          messages: [
-            ...messagesWithPrompt, // Use the messagesWithPrompt array that includes the updated system prompt
-            {
-              role: "assistant",
-              content: text,
-            },
-          ],
         });
       } catch (error) {
         if (error.name === "AbortError") {

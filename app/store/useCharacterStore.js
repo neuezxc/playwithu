@@ -148,10 +148,7 @@ You dummy!
         const promptContent = usePromptStore.getState().getActivePromptContent()
         get().updateSystemPrompt(promptContent)
       },
-      setCharacter: (character) => {
-        useDebugStore.getState().clearPlaceholderData();
-        set({ character });
-      },
+      setCharacter: (character) => set({ character }),
       // Set loading state
       setLoading: (loading) => set({ isLoading: loading }),
       // Character modal state
@@ -869,6 +866,8 @@ You dummy!
               { role: "system", content: processedPrompt },
               { role: "assistant", content: processedFirstMessage }
             ]
+
+            useDebugStore.getState().clearPlaceholderData();
 
             return {
               character: { ...selectedCharacter, messages: newMessages },

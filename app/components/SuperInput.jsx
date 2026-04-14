@@ -166,8 +166,31 @@ export default function SuperInput() {
           throw new Error(`${errorMessage} (${response.status})`);
         }
 
+        // If streaming is not supported (e.g., proxy), fall back to JSON response
         if (!response.body) {
-          throw new Error("No response body");
+          const data = await response.json().catch(() => ({}));
+          if (!data.choices || data.choices.length === 0) {
+            throw new Error("No choices returned from API");
+          }
+          const text = data.choices[0].message.content;
+
+          addLog({
+            characterName: character.name,
+            promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+            resolvedSystemPrompt: processedPrompt,
+            lastUserMessage: lastUserMsg,
+            lastAiResponse: text,
+            url: fetchUrl,
+            headers: headers,
+            params: { model: model_id, temperature, max_tokens, top_p },
+            messages: messagesWithPrompt,
+          });
+
+          setCharacter({
+            ...character,
+            messages: [...messagesWithPrompt, { role: "assistant", content: text }],
+          });
+          return;
         }
 
         const reader = response.body.getReader();

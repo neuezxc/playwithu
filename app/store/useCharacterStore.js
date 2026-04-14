@@ -257,8 +257,36 @@ You dummy!
               throw new Error(`${errorMessage} (${response.status})`);
             }
 
+            // If streaming is not supported (e.g., proxy), fall back to JSON response
             if (!response.body) {
-              throw new Error("No response body");
+              const data = await response.json().catch(() => ({}));
+              if (!data.choices || data.choices.length === 0) {
+                throw new Error("No choices returned from API");
+              }
+              const text = data.choices[0].message.content;
+
+              addLog({
+                characterName: get().character.name,
+                promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+                resolvedSystemPrompt: systemMsg?.content || "",
+                lastUserMessage: lastUserMsg?.content || "",
+                lastAiResponse: text,
+                url: fetchUrl,
+                headers: headers,
+                params: { model: model_id, temperature, max_tokens, top_p },
+                messages: currentMessages,
+              });
+
+              set((state) => ({
+                character: {
+                  ...state.character,
+                  messages: [
+                    ...state.character.messages,
+                    { role: "assistant", content: text },
+                  ],
+                },
+              }));
+              return;
             }
 
             const reader = response.body.getReader();
@@ -428,8 +456,45 @@ You dummy!
             throw new Error(`${errorMessage} (${response.status})`);
           }
 
+          // If streaming is not supported (e.g., proxy), fall back to JSON response
           if (!response.body) {
-            throw new Error("No response body");
+            const data = await response.json().catch(() => ({}));
+            if (!data.choices || data.choices.length === 0) {
+              throw new Error("No choices returned from API");
+            }
+            const text = data.choices[0].message.content;
+
+            addLog({
+              characterName: get().character.name,
+              promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
+              resolvedSystemPrompt: systemMsg?.content || "",
+              lastUserMessage: lastUserMsg?.content || "",
+              lastAiResponse: text,
+              url: fetchUrl,
+              headers: headers,
+              params: { model: model_id, temperature, max_tokens, top_p },
+              messages: contextMessages,
+            });
+
+            set((state) => {
+              const currentMessages = [...state.character.messages];
+              const targetMessage = { ...currentMessages[lastMessageIndex] };
+              if (!targetMessage.candidates) {
+                targetMessage.candidates = [targetMessage.content];
+              }
+              targetMessage.candidates.push(text);
+              targetMessage.currentIndex = targetMessage.candidates.length - 1;
+              targetMessage.content = text;
+              currentMessages[lastMessageIndex] = targetMessage;
+
+              return {
+                character: {
+                  ...state.character,
+                  messages: currentMessages,
+                },
+              };
+            });
+            return;
           }
 
           const reader = response.body.getReader();

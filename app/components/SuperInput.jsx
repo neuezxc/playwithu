@@ -13,8 +13,10 @@ import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
 import DebugModal from "./modal/DebugModal";
+import LorebookModal from "./modal/LorebookModal";
 import InputMenu from "./InputMenu";
 import { useRouter } from "next/navigation";
+import useLorebookStore from "../store/useLorebookStore";
 
 export default function SuperInput() {
   const { api_endpoint, api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
@@ -32,6 +34,8 @@ export default function SuperInput() {
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
   const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const setPatternReplacementModal = useCharacterStore((state) => state.setPatternReplacementModal);
+  const isLorebookModalOpen = useLorebookStore((state) => state.modal);
+  const setLorebookModal = useLorebookStore((state) => state.setModal);
   const isLoading = useCharacterStore((state) => state.isLoading);
   const abortControllerRef = useRef(null);
   const router = useRouter();
@@ -81,7 +85,7 @@ export default function SuperInput() {
       // Build structured debug data before async boundary
       const promptContent = usePromptStore.getState().getActivePromptContent();
       const activePrompt = usePromptStore.getState().getActivePrompt();
-      const values = buildPlaceholderValues();
+      const values = buildPlaceholderValues(updatedMessage);
       const processedPrompt = replacePlaceholders(promptContent, values);
       const lastUserMsg = user.message;
 
@@ -297,6 +301,9 @@ export default function SuperInput() {
 
       {/* Debug Modal */}
       {isDebugModalOpen && <DebugModal onClose={() => setIsDebugModalOpen(false)} />}
+
+      {/* Lorebook Modal */}
+      {isLorebookModalOpen && <LorebookModal onClose={() => setLorebookModal(false)} />}
 
       {/* Disclaimer */}
       <p className="mt-2 text-xs font-normal text-[#656565] hidden">

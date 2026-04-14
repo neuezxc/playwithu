@@ -13,11 +13,13 @@ import {
   Regex,
   Cable,
   Bug,
+  BookOpen,
 } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useMemoryStore from "../store/useMemoryStore";
 import useDebugStore from "../store/useDebugStore";
+import useLorebookStore from "../store/useLorebookStore";
 
 export default function InputMenu({
   setIsCustomPromptOpen,
@@ -34,6 +36,7 @@ export default function InputMenu({
   const setPatternReplacementModal = useCharacterStore(
     (state) => state.setPatternReplacementModal
   );
+  const setLorebookModal = useLorebookStore((state) => state.setModal);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -87,6 +90,14 @@ export default function InputMenu({
       label: "Debug",
       onClick: () => {
         setIsDebugModalOpen(true);
+        setIsOpen(false);
+      },
+    },
+    {
+      icon: <BookOpen size={18} />,
+      label: "Lorebook",
+      onClick: () => {
+        setLorebookModal(true);
         setIsOpen(false);
       },
     },

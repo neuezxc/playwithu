@@ -37,6 +37,7 @@ const useCharacterStore = create(
 "Hey, babe," she said with a playful smile, "what are you up to?"
 `.trim(),
         messages: [],
+        lorebook: { entries: [] },
       },
       // All characters
       characters: [
@@ -56,8 +57,8 @@ const useCharacterStore = create(
             You love cigarettes, smoking, your fans, money, shopping, partying, social media, being the center of attention, and creating content. You hate being ignored, boredom, and being judged. You carefully manage your public image while privately maintaining control in your relationship with {{user}}.
         `,
           scenario: `
-            Hayeon is a well-known streamer, TikToker, and influencer with millions of followers across social media platforms. She has been secretly living with {{user}} for the past three years in a shared apartment. To the public, she hides their relationship to protect her image and keep her fanbase from finding out. Hayeon comes across as outgoing, playful, and attention-loving, but in private she often shows her jealous and grumpy side—especially when she feels ignored or when things don’t go her way.
-                    
+            Hayeon is a well-known streamer, TikToker, and influencer with millions of followers across social media platforms. She has been secretly living with {{user}} for the past three years in a shared apartment. To the public, she hides their relationship to protect her image and keep her fanbase from finding out. Hayeon comes across as outgoing, playful, and attention-loving, but in private she often shows her jealous and grumpy side—especially when she feels ignored or when things don't go her way.
+
         `,
           firstMessage: `
 *Hayeon, a popular streamer, TikToker, and influencer with millions of followers, has been secretly living with {{user}} for the past three years. To the outside world, she hides their relationship, but inside their apartment she often shows her outgoing, jealous, and sometimes grumpy side.*
@@ -66,6 +67,7 @@ const useCharacterStore = create(
 "Hey, babe," she said with a playful smile, "what are you up to?"
 `.trim(),
           messages: [],
+          lorebook: { entries: [] },
         },
         {
           id: "2",
@@ -75,12 +77,13 @@ const useCharacterStore = create(
           description: `
         `,
           scenario: `
-              
+
         `,
           firstMessage: `
 You dummy!
 `.trim(),
           messages: [],
+          lorebook: { entries: [] },
         },
       ],
       isLoading: false,
@@ -164,7 +167,7 @@ You dummy!
       // Edit a user message and regenerate the character's response
       editUserMessageAndRegenerate: async (index, newContent) => {
         // Get required stores
-        const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
+        const { api_endpoint, api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
         const { setLoading } = get();
 
         // Update the user message
@@ -206,33 +209,58 @@ You dummy!
             resolvedSystemPrompt: systemMsg?.content || "",
             lastUserMessage: lastUserMsg?.content || "",
             lastAiResponse: "",
+            url: "",
+            headers: {},
             params: { model: model_id, temperature, max_tokens, top_p },
             messages: currentMessages,
           });
 
           try {
+            const fetchUrl = api_endpoint;
+            
+            const headers = {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "X-Title": "PlayWithU",
+              "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "http://localhost:3000",
+            };
+            if (api_key) {
+              const cleanKey = api_key.startsWith('Bearer ') ? api_key.substring(7) : api_key;
+              headers["Authorization"] = `Bearer ${cleanKey}`;
+            }
+
+            const body = {
+              model: model_id,
+              messages: currentMessages,
+              temperature: temperature,
+              top_p: top_p,
+            };
+
+            if (max_tokens > 0) body.max_tokens = max_tokens;
+            if (frequency_penalty !== 0) body.frequency_penalty = frequency_penalty;
+            if (presence_penalty !== 0) body.presence_penalty = presence_penalty;
+
             // Make API call to regenerate the character's response
             const response = await fetch(
-              "https://openrouter.ai/api/v1/chat/completions",
+              fetchUrl,
               {
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${api_key}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  model: model_id,
-                  messages: currentMessages,
-                  temperature: temperature,
-                  max_tokens: max_tokens,
-                  top_p: top_p,
-                  frequency_penalty: frequency_penalty,
-                  presence_penalty: presence_penalty,
-                }),
+                headers,
+                body: JSON.stringify(body),
               }
             );
 
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+              const errorMessage = data.error?.message || response.statusText || "API request failed";
+              throw new Error(`${errorMessage} (${response.status})`);
+            }
+            if (!data.choices || data.choices.length === 0) {
+              throw new Error("No choices returned from API");
+            }
+
+            const text = data.choices[0].message.content;
 
             // Log the response
             addLog({
@@ -241,19 +269,11 @@ You dummy!
               resolvedSystemPrompt: systemMsg?.content || "",
               lastUserMessage: lastUserMsg?.content || "",
               lastAiResponse: text,
+              url: fetchUrl,
+              headers: headers,
               params: { model: model_id, temperature, max_tokens, top_p },
               messages: currentMessages,
             });
-
-            // Error handling for API response
-            if (!response.ok) {
-              throw new Error(data.error?.message || "API request failed");
-            }
-            if (!data.choices || data.choices.length === 0) {
-              throw new Error("No choices returned from API");
-            }
-
-            const text = data.choices[0].message.content;
 
             // Add the character's new response
             set((state) => ({
@@ -276,6 +296,8 @@ You dummy!
               resolvedSystemPrompt: systemMsg?.content || "",
               lastUserMessage: lastUserMsg?.content || "",
               lastAiResponse: "",
+              url: fetchUrl || "",
+              headers: headers || {},
               error: error.message,
               params: { model: model_id, temperature, max_tokens, top_p },
               messages: currentMessages,
@@ -295,7 +317,7 @@ You dummy!
       },
       // Regenerate the last message
       regenerateLastMessage: async () => {
-        const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
+        const { api_endpoint, api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore.getState();
         const { setLoading } = get();
         const messages = get().character.messages;
 
@@ -324,31 +346,56 @@ You dummy!
             resolvedSystemPrompt: systemMsg?.content || "",
             lastUserMessage: lastUserMsg?.content || "",
             lastAiResponse: "",
+            url: "",
+            headers: {},
             params: { model: model_id, temperature, max_tokens, top_p },
             messages: contextMessages,
           });
 
+          const fetchUrl = api_endpoint;
+          
+          const headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Title": "PlayWithU",
+            "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "http://localhost:3000",
+          };
+          if (api_key) {
+            const cleanKey = api_key.startsWith('Bearer ') ? api_key.substring(7) : api_key;
+            headers["Authorization"] = `Bearer ${cleanKey}`;
+          }
+
+          const body = {
+            model: model_id,
+            messages: contextMessages,
+            temperature: temperature,
+            top_p: top_p,
+          };
+
+          if (max_tokens > 0) body.max_tokens = max_tokens;
+          if (frequency_penalty !== 0) body.frequency_penalty = frequency_penalty;
+          if (presence_penalty !== 0) body.presence_penalty = presence_penalty;
+
           const response = await fetch(
-            "https://openrouter.ai/api/v1/chat/completions",
+            fetchUrl,
             {
               method: "POST",
-              headers: {
-                Authorization: `Bearer ${api_key}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: model_id,
-                messages: contextMessages,
-                temperature: temperature,
-                max_tokens: max_tokens,
-                top_p: top_p,
-                frequency_penalty: frequency_penalty,
-                presence_penalty: presence_penalty,
-              }),
+              headers,
+              body: JSON.stringify(body),
             }
           );
 
-          const data = await response.json();
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            const errorMessage = data.error?.message || response.statusText || "API request failed";
+            throw new Error(`${errorMessage} (${response.status})`);
+          }
+          if (!data.choices || data.choices.length === 0) {
+            throw new Error("No choices returned from API");
+          }
+
+          const newContent = data.choices[0].message.content;
 
           addLog({
             characterName: get().character.name,
@@ -356,18 +403,11 @@ You dummy!
             resolvedSystemPrompt: systemMsg?.content || "",
             lastUserMessage: lastUserMsg?.content || "",
             lastAiResponse: newContent,
+            url: fetchUrl,
+            headers: headers,
             params: { model: model_id, temperature, max_tokens, top_p },
             messages: contextMessages,
           });
-
-          if (!response.ok) {
-            throw new Error(data.error?.message || "API request failed");
-          }
-          if (!data.choices || data.choices.length === 0) {
-            throw new Error("No choices returned from API");
-          }
-
-          const newContent = data.choices[0].message.content;
 
           // Update the message with new candidate
           set((state) => {
@@ -493,7 +533,11 @@ You dummy!
         set((state) => ({
           characters: [
             ...state.characters,
-            { ...newCharacter, id: Date.now().toString() },
+            {
+              ...newCharacter,
+              id: Date.now().toString(),
+              lorebook: newCharacter.lorebook || { entries: [] },
+            },
           ],
         })),
 
@@ -523,6 +567,81 @@ You dummy!
           ),
         })),
 
+      // Character lorebook entry actions
+      addCharLorebookEntry: (characterId) =>
+        set((state) => {
+          const updateCharacterLorebook = (char) => {
+            if (char.id === characterId) {
+              const lorebook = char.lorebook || { entries: [] }
+              return {
+                ...char,
+                lorebook: {
+                  ...lorebook,
+                  entries: [
+                    ...lorebook.entries,
+                    { id: Date.now().toString(), keywords: '', content: '' },
+                  ],
+                },
+              }
+            }
+            return char
+          }
+          return {
+            characters: state.characters.map(updateCharacterLorebook),
+            ...(state.character.id === characterId
+              ? { character: updateCharacterLorebook(state.character) }
+              : {}),
+          }
+        }),
+
+      updateCharLorebookEntry: (characterId, entryId, updates) =>
+        set((state) => {
+          const updateEntry = (char) => {
+            if (char.id === characterId && char.lorebook) {
+              return {
+                ...char,
+                lorebook: {
+                  ...char.lorebook,
+                  entries: char.lorebook.entries.map((entry) =>
+                    entry.id === entryId ? { ...entry, ...updates } : entry
+                  ),
+                },
+              }
+            }
+            return char
+          }
+          return {
+            characters: state.characters.map(updateEntry),
+            ...(state.character.id === characterId
+              ? { character: updateEntry(state.character) }
+              : {}),
+          }
+        }),
+
+      deleteCharLorebookEntry: (characterId, entryId) =>
+        set((state) => {
+          const removeEntry = (char) => {
+            if (char.id === characterId && char.lorebook) {
+              return {
+                ...char,
+                lorebook: {
+                  ...char.lorebook,
+                  entries: char.lorebook.entries.filter(
+                    (entry) => entry.id !== entryId
+                  ),
+                },
+              }
+            }
+            return char
+          }
+          return {
+            characters: state.characters.map(removeEntry),
+            ...(state.character.id === characterId
+              ? { character: removeEntry(state.character) }
+              : {}),
+          }
+        }),
+
       // Set active character
       setActiveCharacter: (characterId) =>
         set(state => {
@@ -542,6 +661,7 @@ You dummy!
               user_description: user?.description || '',
               scenario: selectedCharacter?.scenario || '',
               memory: summarizeText || '',
+              lorebook: '',
               tools: state.patternReplacements
                 .filter(p => p.active && p.prompt)
                 .map(p => p.prompt)

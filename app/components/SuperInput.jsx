@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUp, Users } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowUp, Users, Square } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
@@ -13,11 +14,10 @@ import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
 import DebugModal from "./modal/DebugModal";
 import InputMenu from "./InputMenu";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SuperInput() {
-  const { api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
+  const { api_endpoint, api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
   const setModal = useApiSettingStore((state) => state.setModal);
   const setModalMemory = useMemoryStore((state) => state.setModal);
   const { character, isCharacterModalOpen } = useCharacterStore();
@@ -32,7 +32,16 @@ export default function SuperInput() {
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
   const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const setPatternReplacementModal = useCharacterStore((state) => state.setPatternReplacementModal);
+  const isLoading = useCharacterStore((state) => state.isLoading);
+  const abortControllerRef = useRef(null);
   const router = useRouter();
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
 
   const handleMessage = async () => {
     if (!user.message.trim()) return;
@@ -99,36 +108,52 @@ export default function SuperInput() {
         resolvedSystemPrompt: processedPrompt,
         lastUserMessage: lastUserMsg,
         lastAiResponse: "",
+        url: "",
+        headers: {},
         params: { model: model_id, temperature, max_tokens, top_p },
         messages: messagesWithPrompt,
       });
 
       try {
+        const fetchUrl = api_endpoint;
+        
+        const headers = {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Title": "PlayWithU",
+          "HTTP-Referer": window.location.origin,
+        };
+        if (api_key) {
+          const cleanKey = api_key.startsWith('Bearer ') ? api_key.substring(7) : api_key;
+          headers["Authorization"] = `Bearer ${cleanKey}`;
+        }
+
+        const body = {
+          model: model_id,
+          messages: messagesWithPrompt,
+          temperature: temperature,
+          top_p: top_p,
+        };
+
+        if (max_tokens > 0) body.max_tokens = max_tokens;
+        if (frequency_penalty !== 0) body.frequency_penalty = frequency_penalty;
+        if (presence_penalty !== 0) body.presence_penalty = presence_penalty;
+
         const response = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
+          fetchUrl,
           {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${api_key}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: model_id,
-              messages: messagesWithPrompt, // Use the messages array with the processed prompt
-              temperature: temperature,
-              max_tokens: max_tokens,
-              top_p: top_p,
-              frequency_penalty: frequency_penalty,
-              presence_penalty: presence_penalty,
-            }),
+            headers,
+            body: JSON.stringify(body),
           }
         );
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         // Error handling for API response
         if (!response.ok) {
-          throw new Error(data.error?.message || "API request failed");
+          const errorMessage = data.error?.message || response.statusText || "API request failed";
+          throw new Error(`${errorMessage} (${response.status})`);
         }
         if (!data.choices || data.choices.length === 0) {
           throw new Error("No choices returned from API");
@@ -143,6 +168,8 @@ export default function SuperInput() {
           resolvedSystemPrompt: processedPrompt,
           lastUserMessage: lastUserMsg,
           lastAiResponse: text,
+          url: fetchUrl,
+          headers: headers,
           params: { model: model_id, temperature, max_tokens, top_p },
           messages: messagesWithPrompt,
         });
@@ -165,6 +192,8 @@ export default function SuperInput() {
           resolvedSystemPrompt: processedPrompt,
           lastUserMessage: lastUserMsg,
           lastAiResponse: "",
+          url: fetchUrl || "",
+          headers: headers || {},
           error: error.message,
           params: { model: model_id, temperature, max_tokens, top_p },
           messages: messagesWithPrompt,
@@ -225,12 +254,22 @@ export default function SuperInput() {
               </span>
             </button>
           </div>
-          <button
-            onClick={handleMessage}
-            className="flex items-center justify-center w-8 h-8 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg text-white hover:bg-[#3A9E49]/50 transition-colors"
-          >
-            <ArrowUp size={18} className="text-[#D3D3D3]" />
-          </button>
+          {isLoading ? (
+            <button
+              onClick={handleStop}
+              className="flex items-center justify-center w-8 h-8 bg-red-500/30 border border-red-500 rounded-lg text-white hover:bg-red-500/50 transition-colors"
+              title="Stop generation"
+            >
+              <Square size={16} className="text-[#D3D3D3] fill-current" />
+            </button>
+          ) : (
+            <button
+              onClick={handleMessage}
+              className="flex items-center justify-center w-8 h-8 bg-[#3A9E49]/30 border border-[#3A9E49] rounded-lg text-white hover:bg-[#3A9E49]/50 transition-colors"
+            >
+              <ArrowUp size={18} className="text-[#D3D3D3]" />
+            </button>
+          )}
         </div>
       </div>
 

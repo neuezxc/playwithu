@@ -115,6 +115,8 @@ export default function SuperInput() {
       });
 
       try {
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
         const fetchUrl = api_endpoint;
         
         const headers = {
@@ -145,6 +147,7 @@ export default function SuperInput() {
             method: "POST",
             headers,
             body: JSON.stringify(body),
+            signal: controller.signal,
           }
         );
 
@@ -206,6 +209,7 @@ export default function SuperInput() {
       // You might want to revert the user message or show an error to the user
     } finally {
       // Reset loading state
+      abortControllerRef.current = null;
       setLoading(false);
     }
   };

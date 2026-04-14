@@ -22,6 +22,8 @@ const useDebugStore = create(
           resolvedSystemPrompt: log.resolvedSystemPrompt || "",
           lastUserMessage: log.lastUserMessage || "",
           lastAiResponse: log.lastAiResponse || "",
+          url: log.url || "",
+          headers: log.headers || {},
           params: log.params || { model: "", temperature: 0, max_tokens: 0, top_p: 0 },
           error: log.error || null,
           messages: log.messages || [],
@@ -41,6 +43,17 @@ const useDebugStore = create(
       setModalOpen: (isOpen) => set({ isModalOpen: isOpen }),
 
       toggleEnabled: () => set((state) => ({ isEnabled: !state.isEnabled })),
+
+      placeholderData: null,
+      isPlaceholderPanelOpen: false,
+
+      setPlaceholderData: (data) => set({ placeholderData: data }),
+
+      clearPlaceholderData: () => set({ placeholderData: null }),
+
+      togglePlaceholderPanel: () => set((state) => ({
+        isPlaceholderPanelOpen: !state.isPlaceholderPanelOpen
+      })),
     }),
     {
       name: "debug-storage",

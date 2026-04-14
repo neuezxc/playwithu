@@ -14,6 +14,7 @@ import {
   Cable,
   Bug,
   BookOpen,
+  Eye,
 } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
@@ -25,6 +26,7 @@ export default function InputMenu({
   setIsCustomPromptOpen,
   setIsDebugModalOpen,
   setIsPersonaModalOpen,
+  onTogglePlaceholderPanel,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -107,6 +109,14 @@ export default function InputMenu({
       label: "Persona",
       onClick: () => {
         setIsPersonaModalOpen(true);
+        setIsOpen(false);
+      },
+    },
+    {
+      icon: <Eye size={18} />,
+      label: "Placeholder Status",
+      onClick: () => {
+        onTogglePlaceholderPanel?.();
         setIsOpen(false);
       },
     },

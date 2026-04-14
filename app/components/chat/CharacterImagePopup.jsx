@@ -220,7 +220,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                     cursor: isDragging ? 'grabbing' : 'auto',
                     backgroundColor: 'transparent',
                     animation: isAnimating ? 'balloon-pop 600ms linear forwards' : 'none',
-                    transform: animationReady ? 'scale(1, 1)' : undefined,
                 }}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}

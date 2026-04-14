@@ -8,7 +8,7 @@ import useUserStore from "../store/useUserStore";
 import useMemoryStore from "../store/useMemoryStore";
 import usePromptStore from "../store/usePromptStore";
 import useDebugStore from "../store/useDebugStore";
-import { replacePlaceholders, buildPlaceholderValues } from "../utils/replacerTemplate"
+import { replacePlaceholders, buildPlaceholderValues, PROMPT_VARIABLES } from "../utils/replacerTemplate"
 import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
@@ -19,6 +19,11 @@ import PersonaModal from "./modal/PersonaModal";
 import PlaceholderStatusPanel from "./PlaceholderStatusPanel";
 import { useRouter } from "next/navigation";
 import useLorebookStore from "../store/useLorebookStore";
+
+function countTokens(text) {
+  if (!text) return 0;
+  return Math.ceil(text.trim().split(/\s+/).filter(Boolean).length * 1.3);
+}
 
 export default function SuperInput() {
   const { api_endpoint, api_key, model_id, temperature, max_tokens, top_p, frequency_penalty, presence_penalty } = useApiSettingStore();
@@ -93,6 +98,29 @@ export default function SuperInput() {
       const values = buildPlaceholderValues(updatedMessage);
       const processedPrompt = replacePlaceholders(promptContent, values);
       const lastUserMsg = user.message;
+
+      // Analyze placeholders and store in debug store
+      const placeholdersAnalysis = {};
+      for (const variable of PROMPT_VARIABLES) {
+        const name = variable.replace(/{{|}}/g, '');
+        const inTemplate = promptContent.includes(variable);
+        const contentValue = values[name] || '';
+        const hasContent = contentValue.trim().length > 0;
+        placeholdersAnalysis[name] = {
+          inTemplate,
+          hasContent,
+          value: contentValue,
+          tokenCount: countTokens(contentValue),
+        };
+      }
+
+      const resolvedTemplate = replacePlaceholders(promptContent, values);
+      useDebugStore.getState().setPlaceholderData({
+        timestamp: Date.now(),
+        rawTemplate: promptContent,
+        resolvedTemplate,
+        placeholders: placeholdersAnalysis,
+      });
 
       // Update the system prompt in the character store
       const { updateSystemPrompt } = useCharacterStore.getState();

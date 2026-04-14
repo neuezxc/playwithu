@@ -10,6 +10,8 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     const resizeStartPos = useRef({ x: 0, y: 0 });
     const initialImgSize = useRef({ width: 0, height: 0 });
     const aspectRatio = useRef(null);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [animationReady, setAnimationReady] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -22,7 +24,7 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
 
             let { width, height } = imgSize;
 
-            // If image hasn't loaded yet, we might have default 300x400. 
+            // If image hasn't loaded yet, we might have default 300x400.
             // If it has loaded, we have aspect ratio.
             // We should ensure initial open fits the screen.
 
@@ -45,7 +47,13 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                 x: (windowWidth - width) / 2,
                 y: (windowHeight - (height + 32)) / 2
             });
+            setIsAnimating(true);
+            setAnimationReady(false);
         }
+        return () => {
+            setIsAnimating(false);
+            setAnimationReady(false);
+        };
     }, [isOpen]);
 
     const handleImageLoad = (e) => {
@@ -76,6 +84,11 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
             x: (windowWidth - width) / 2,
             y: (windowHeight - (height + 32)) / 2
         });
+    };
+
+    const handleAnimationEnd = () => {
+        setIsAnimating(false);
+        setAnimationReady(true);
     };
 
     useEffect(() => {
@@ -187,21 +200,33 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     if (!isOpen || !imageSrc) return null;
 
     return (
-        <div
-            className="fixed z-50 rounded-lg shadow-2xl flex flex-col"
-            style={{
-                left: position.x,
-                top: position.y,
-                width: imgSize.width,
-                // Total height is image height + header height (32px)
-                height: imgSize.height + 32,
-                cursor: isDragging ? 'grabbing' : 'auto',
-                backgroundColor: 'transparent' // Transparent bg to avoid black bars
-            }}
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleTouchStart}
-            onWheel={handleWheel}
-        >
+        <>
+            <style>{`
+                @keyframes balloon-pop {
+                    0% { transform: scale(0) translateY(-30px); opacity: 0; }
+                    50% { transform: scale(1.15) translateY(5px); opacity: 1; }
+                    70% { transform: scale(0.95) translateY(-3px); }
+                    85% { transform: scale(1.03) translateY(1px); }
+                    100% { transform: scale(1) translateY(0); opacity: 1; }
+                }
+            `}</style>
+            <div
+                className="fixed z-50 rounded-lg shadow-2xl flex flex-col"
+                style={{
+                    left: position.x,
+                    top: position.y,
+                    width: imgSize.width,
+                    height: imgSize.height + 32,
+                    cursor: isDragging ? 'grabbing' : 'auto',
+                    backgroundColor: 'transparent',
+                    animation: isAnimating ? 'balloon-pop 600ms linear forwards' : 'none',
+                    transform: animationReady ? 'scale(1, 1)' : undefined,
+                }}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+                onWheel={handleWheel}
+                onAnimationEnd={handleAnimationEnd}
+            >
             {/* Header / Drag Handle */}
             <div className="h-8 bg-[#2a2a2a] flex items-center justify-between px-2 cursor-grab active:cursor-grabbing rounded-t-lg border border-[#333] border-b-0">
                 <span className="text-xs text-gray-400 font-medium truncate select-none">{characterName}</span>
@@ -235,6 +260,7 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

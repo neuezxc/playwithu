@@ -148,7 +148,10 @@ You dummy!
         const promptContent = usePromptStore.getState().getActivePromptContent()
         get().updateSystemPrompt(promptContent)
       },
-      setCharacter: (character) => set({ character: character }),
+      setCharacter: (character) => {
+        useDebugStore.getState().clearPlaceholderData();
+        set({ character });
+      },
       // Set loading state
       setLoading: (loading) => set({ isLoading: loading }),
       // Character modal state

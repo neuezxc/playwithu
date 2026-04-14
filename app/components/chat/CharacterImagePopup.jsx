@@ -3,17 +3,13 @@ import { X, Maximize2 } from 'lucide-react';
 
 const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     const [position, setPosition] = useState({ x: 100, y: 100 });
-    const [imgSize, setImgSize] = useState({ width: 300, height: 400 }); // Size of the image part
+    const [imgSize, setImgSize] = useState({ width: 300, height: 400 });
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const dragStartPos = useRef({ x: 0, y: 0 });
     const resizeStartPos = useRef({ x: 0, y: 0 });
     const initialImgSize = useRef({ width: 0, height: 0 });
     const aspectRatio = useRef(null);
-    const dragStartTimeout = useRef(null);
-    const [isPressing, setIsPressing] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
-    const [animationReady, setAnimationReady] = useState(false);
     const [jellyScale, setJellyScale] = useState({ x: 1, y: 1 });
     const lastFramePos = useRef({ x: 0, y: 0 });
     const lastFrameTime = useRef(0);
@@ -23,19 +19,12 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
         if (isOpen) {
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
-
-            // Calculate max available dimensions (90% of screen)
             const maxWidth = windowWidth * 0.9;
-            const maxHeight = windowHeight * 0.8; // Leave room for header/other UI
+            const maxHeight = windowHeight * 0.8;
 
             let { width, height } = imgSize;
 
-            // If image hasn't loaded yet, we might have default 300x400.
-            // If it has loaded, we have aspect ratio.
-            // We should ensure initial open fits the screen.
-
             if (aspectRatio.current) {
-                // If we have aspect ratio, resize to fit within max dimensions while maintaining ratio
                 if (width > maxWidth || height > maxHeight) {
                     const scale = Math.min(maxWidth / width, maxHeight / height);
                     width *= scale;
@@ -43,30 +32,21 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                     setImgSize({ width, height });
                 }
             } else {
-                // Default fallback if no ratio yet, just clamp
                 if (width > maxWidth) width = maxWidth;
                 if (height > maxHeight) height = maxHeight;
-                // We'll let handleImageLoad fix the ratio later
             }
 
             setPosition({
                 x: (windowWidth - width) / 2,
                 y: (windowHeight - (height + 32)) / 2
             });
-            setIsAnimating(true);
-            setAnimationReady(false);
         }
-        return () => {
-            setIsAnimating(false);
-            setAnimationReady(false);
-        };
     }, [isOpen]);
 
     const handleImageLoad = (e) => {
         const { naturalWidth, naturalHeight } = e.target;
         aspectRatio.current = naturalWidth / naturalHeight;
 
-        // Recalculate size to fit screen on load
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         const maxWidth = windowWidth * 0.9;
@@ -76,7 +56,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
         let width = defaultHeight * aspectRatio.current;
         let height = defaultHeight;
 
-        // Scale down if too big for mobile
         if (width > maxWidth || height > maxHeight) {
             const scale = Math.min(maxWidth / width, maxHeight / height);
             width *= scale;
@@ -85,16 +64,10 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
 
         setImgSize({ width, height });
 
-        // Re-center after load resize
         setPosition({
             x: (windowWidth - width) / 2,
             y: (windowHeight - (height + 32)) / 2
         });
-    };
-
-    const handleAnimationEnd = () => {
-        setIsAnimating(false);
-        setAnimationReady(true);
     };
 
     const updateJellyScale = (clientX, clientY) => {
@@ -135,9 +108,8 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                 updateJellyScale(clientX, clientY);
             } else if (isResizing) {
                 const dy = clientY - resizeStartPos.current.y;
-                // Scale based on height change, maintain aspect ratio
                 const newHeight = Math.max(100, initialImgSize.current.height + dy);
-                const newWidth = aspectRatio.current ? newHeight * aspectRatio.current : newHeight; // Fallback if no ratio
+                const newWidth = aspectRatio.current ? newHeight * aspectRatio.current : newHeight;
 
                 setImgSize({
                     width: newWidth,
@@ -148,14 +120,12 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
 
         const handleMouseMove = (e) => handleMove(e.clientX, e.clientY);
         const handleTouchMove = (e) => {
-            // Prevent scrolling while dragging/resizing
             if (isDragging || isResizing) e.preventDefault();
             const touch = e.touches[0];
             handleMove(touch.clientX, touch.clientY);
         };
 
         const handleEnd = () => {
-            cancelDragDelay();
             setIsDragging(false);
             setIsResizing(false);
             setJellyScale({ x: 1, y: 1 });
@@ -174,54 +144,40 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
             window.removeEventListener('mouseup', handleEnd);
             window.removeEventListener('touchmove', handleTouchMove);
             window.removeEventListener('touchend', handleEnd);
-            cancelDragDelay();
         };
     }, [isDragging, isResizing]);
 
-    const startDragDelay = (clientX, clientY) => {
-        setIsPressing(true);
-
-        dragStartTimeout.current = setTimeout(() => {
-            setIsPressing(false);
+    const handleStart = (clientX, clientY, type) => {
+        if (type === 'drag') {
             setIsDragging(true);
             dragStartPos.current = { x: clientX, y: clientY };
-            dragStartTimeout.current = null;
-        }, 200);
-    };
-
-    const cancelDragDelay = () => {
-        if (dragStartTimeout.current) {
-            clearTimeout(dragStartTimeout.current);
-            dragStartTimeout.current = null;
+        } else if (type === 'resize') {
+            setIsResizing(true);
+            resizeStartPos.current = { x: clientX, y: clientY };
+            initialImgSize.current = { ...imgSize };
         }
-        setIsPressing(false);
-        setIsDragging(false);
     };
 
     const handleMouseDown = (e) => {
         if (e.target.closest('.resize-handle') || e.target.closest('.close-button')) return;
-        startDragDelay(e.clientX, e.clientY);
+        handleStart(e.clientX, e.clientY, 'drag');
     };
 
     const handleTouchStart = (e) => {
         if (e.target.closest('.resize-handle') || e.target.closest('.close-button')) return;
         const touch = e.touches[0];
-        startDragDelay(touch.clientX, touch.clientY);
+        handleStart(touch.clientX, touch.clientY, 'drag');
     };
 
     const handleResizeMouseDown = (e) => {
         e.stopPropagation();
-        setIsResizing(true);
-        resizeStartPos.current = { x: e.clientX, y: e.clientY };
-        initialImgSize.current = { ...imgSize };
+        handleStart(e.clientX, e.clientY, 'resize');
     };
 
     const handleResizeTouchStart = (e) => {
         e.stopPropagation();
         const touch = e.touches[0];
-        setIsResizing(true);
-        resizeStartPos.current = { x: touch.clientX, y: touch.clientY };
-        initialImgSize.current = { ...imgSize };
+        handleStart(touch.clientX, touch.clientY, 'resize');
     };
 
     const handleWheel = (e) => {
@@ -249,38 +205,23 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     if (!isOpen || !imageSrc) return null;
 
     return (
-        <>
-            <style>{`
-                @keyframes balloon-pop {
-                    0% { transform: scale(0) translateY(-30px); opacity: 0; }
-                    50% { transform: scale(1.15) translateY(5px); opacity: 1; }
-                    70% { transform: scale(0.95) translateY(-3px); }
-                    85% { transform: scale(1.03) translateY(1px); }
-                    100% { transform: scale(1) translateY(0); opacity: 1; }
-                }
-            `}</style>
-            <div
-                className="fixed z-50 rounded-lg shadow-2xl flex flex-col"
-                style={{
-                    left: position.x,
-                    top: position.y,
-                    width: imgSize.width,
-                    height: imgSize.height + 32,
-                    cursor: isPressing ? 'grab' : isDragging ? 'grabbing' : 'auto',
-                    backgroundColor: 'transparent',
-                    animation: isAnimating ? 'balloon-pop 600ms linear forwards' : 'none',
-                    transform: isPressing
-                        ? 'scale(0.95, 0.95)'
-                        : isDragging
-                            ? `scale(${jellyScale.x}, ${jellyScale.y})`
-                            : undefined,
-                }}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-                onWheel={handleWheel}
-                onAnimationEnd={handleAnimationEnd}
-            >
-            {/* Header / Drag Handle */}
+        <div
+            className="fixed z-50 rounded-lg shadow-2xl flex flex-col"
+            style={{
+                left: position.x,
+                top: position.y,
+                width: imgSize.width,
+                height: imgSize.height + 32,
+                cursor: isDragging ? 'grabbing' : 'auto',
+                backgroundColor: 'transparent',
+                transform: isDragging
+                    ? `scale(${jellyScale.x}, ${jellyScale.y})`
+                    : undefined,
+            }}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onWheel={handleWheel}
+        >
             <div className="h-8 bg-[#2a2a2a] flex items-center justify-between px-2 cursor-grab active:cursor-grabbing rounded-t-lg border border-[#333] border-b-0">
                 <span className="text-xs text-gray-400 font-medium truncate select-none">{characterName}</span>
                 <button
@@ -291,7 +232,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                 </button>
             </div>
 
-            {/* Image Content */}
             <div
                 className="relative overflow-hidden bg-black/5 border border-[#333] border-t-0 rounded-b-lg"
                 style={{ width: imgSize.width, height: imgSize.height }}
@@ -303,7 +243,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                     onLoad={handleImageLoad}
                 />
 
-                {/* Resize Handle - Inside image area to avoid sticking out */}
                 <div
                     className="resize-handle absolute bottom-0 right-0 w-8 h-8 cursor-se-resize flex items-center justify-center text-white/50 hover:text-white touch-none"
                     onMouseDown={handleResizeMouseDown}
@@ -313,7 +252,6 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                 </div>
             </div>
         </div>
-        </>
     );
 };
 

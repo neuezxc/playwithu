@@ -24,6 +24,7 @@ import useLorebookStore from "../store/useLorebookStore";
 export default function InputMenu({
   setIsCustomPromptOpen,
   setIsDebugModalOpen,
+  setIsPersonaModalOpen,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -98,6 +99,14 @@ export default function InputMenu({
       label: "Lorebook",
       onClick: () => {
         setLorebookModal(true);
+        setIsOpen(false);
+      },
+    },
+    {
+      icon: <User size={18} />,
+      label: "Persona",
+      onClick: () => {
+        setIsPersonaModalOpen(true);
         setIsOpen(false);
       },
     },

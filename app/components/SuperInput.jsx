@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ArrowUp, Users, Square } from "lucide-react";
+import { ArrowUp, Users, Square, User } from "lucide-react";
 import useApiSettingStore from "../store/useApiSettingStore";
 import useCharacterStore from "../store/useCharacterStore";
 import useUserStore from "../store/useUserStore";
@@ -15,6 +15,7 @@ import PatternReplacementModal from "./modal/PatternReplacementModal";
 import DebugModal from "./modal/DebugModal";
 import LorebookModal from "./modal/LorebookModal";
 import InputMenu from "./InputMenu";
+import PersonaModal from "./modal/PersonaModal";
 import { useRouter } from "next/navigation";
 import useLorebookStore from "../store/useLorebookStore";
 
@@ -33,6 +34,7 @@ export default function SuperInput() {
   const setLoading = useCharacterStore((state) => state.setLoading);
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
   const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
+  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
   const setPatternReplacementModal = useCharacterStore((state) => state.setPatternReplacementModal);
   const isLorebookModalOpen = useLorebookStore((state) => state.modal);
   const setLorebookModal = useLorebookStore((state) => state.setModal);
@@ -253,7 +255,25 @@ export default function SuperInput() {
             <InputMenu
               setIsCustomPromptOpen={setIsCustomPromptOpen}
               setIsDebugModalOpen={setIsDebugModalOpen}
+              setIsPersonaModalOpen={setIsPersonaModalOpen}
             />
+            {user?.avatarURL ? (
+              <button
+                onClick={() => setIsPersonaModalOpen(true)}
+                className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#454545] hover:border-[#3A9E49] transition-colors"
+                title="Edit Persona"
+              >
+                <img src={user.avatarURL} alt="Your avatar" className="w-full h-full object-cover" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsPersonaModalOpen(true)}
+                className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-full hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
+                title="Edit Persona"
+              >
+                <User size={16} className="text-[#EEEEEE]" />
+              </button>
+            )}
             <button
               onClick={() => router.push("/characters")}
               className="flex items-center justify-center w-8 h-8 bg-white/5 border border-[#454545] rounded-lg hover:bg-[#3A9E49]/30 hover:border-[#3A9E49] transition-all"
@@ -301,6 +321,9 @@ export default function SuperInput() {
 
       {/* Debug Modal */}
       {isDebugModalOpen && <DebugModal onClose={() => setIsDebugModalOpen(false)} />}
+
+      {/* Persona Modal */}
+      {isPersonaModalOpen && <PersonaModal isOpen={isPersonaModalOpen} onClose={() => setIsPersonaModalOpen(false)} />}
 
       {/* Lorebook Modal */}
       {isLorebookModalOpen && <LorebookModal onClose={() => setLorebookModal(false)} />}

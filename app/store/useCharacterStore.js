@@ -257,7 +257,7 @@ You dummy!
               throw new Error(`${errorMessage} (${response.status})`);
             }
 
-            // If streaming is not supported (e.g., proxy), fall back to JSON response
+            // If streaming is not supported (e.g., proxy), simulate typewriter effect
             if (!response.body) {
               const data = await response.json().catch(() => ({}));
               if (!data.choices || data.choices.length === 0) {
@@ -265,6 +265,36 @@ You dummy!
               }
               const text = data.choices[0].message.content;
 
+              const assistantMsgIndex = index + 1;
+
+              // Add placeholder assistant message
+              set((state) => {
+                const msgs = [...state.character.messages];
+                msgs[assistantMsgIndex] = { role: "assistant", content: "" };
+                return { character: { ...state.character, messages: msgs } };
+              });
+
+              // Simulate streaming
+              let revealedIndex = 0;
+              const charsPerTick = 5;
+              const intervalMs = 60;
+
+              const streamInterval = setInterval(() => {
+                revealedIndex += charsPerTick;
+                if (revealedIndex >= text.length) {
+                  revealedIndex = text.length;
+                  clearInterval(streamInterval);
+                  setLoading(false);
+                }
+                const revealedText = text.slice(0, revealedIndex);
+                set((state) => {
+                  const msgs = [...state.character.messages];
+                  msgs[assistantMsgIndex] = { role: "assistant", content: revealedText };
+                  return { character: { ...state.character, messages: msgs } };
+                });
+              }, intervalMs);
+
+              // Log the final response
               addLog({
                 characterName: get().character.name,
                 promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
@@ -276,16 +306,6 @@ You dummy!
                 params: { model: model_id, temperature, max_tokens, top_p },
                 messages: currentMessages,
               });
-
-              set((state) => ({
-                character: {
-                  ...state.character,
-                  messages: [
-                    ...state.character.messages,
-                    { role: "assistant", content: text },
-                  ],
-                },
-              }));
               return;
             }
 
@@ -456,7 +476,7 @@ You dummy!
             throw new Error(`${errorMessage} (${response.status})`);
           }
 
-          // If streaming is not supported (e.g., proxy), fall back to JSON response
+          // If streaming is not supported (e.g., proxy), simulate typewriter effect
           if (!response.body) {
             const data = await response.json().catch(() => ({}));
             if (!data.choices || data.choices.length === 0) {
@@ -464,6 +484,60 @@ You dummy!
             }
             const text = data.choices[0].message.content;
 
+            // Add placeholder assistant message
+            set((state) => {
+              const currentMessages = [...state.character.messages];
+              const targetMessage = { ...currentMessages[lastMessageIndex] };
+              if (!targetMessage.candidates) {
+                targetMessage.candidates = [targetMessage.content];
+              }
+              targetMessage.candidates.push("");
+              targetMessage.currentIndex = targetMessage.candidates.length - 1;
+              targetMessage.content = "";
+              currentMessages[lastMessageIndex] = targetMessage;
+
+              return {
+                character: {
+                  ...state.character,
+                  messages: currentMessages,
+                },
+              };
+            });
+
+            // Simulate streaming
+            let revealedIndex = 0;
+            const charsPerTick = 5;
+            const intervalMs = 60;
+
+            const streamInterval = setInterval(() => {
+              revealedIndex += charsPerTick;
+              if (revealedIndex >= text.length) {
+                revealedIndex = text.length;
+                clearInterval(streamInterval);
+                setLoading(false);
+              }
+              const revealedText = text.slice(0, revealedIndex);
+              set((state) => {
+                const currentMessages = [...state.character.messages];
+                const targetMessage = { ...currentMessages[lastMessageIndex] };
+                if (!targetMessage.candidates) {
+                  targetMessage.candidates = [targetMessage.content];
+                }
+                targetMessage.candidates[targetMessage.candidates.length - 1] = revealedText;
+                targetMessage.currentIndex = targetMessage.candidates.length - 1;
+                targetMessage.content = revealedText;
+                currentMessages[lastMessageIndex] = targetMessage;
+
+                return {
+                  character: {
+                    ...state.character,
+                    messages: currentMessages,
+                  },
+                };
+              });
+            }, intervalMs);
+
+            // Log the final response
             addLog({
               characterName: get().character.name,
               promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
@@ -474,25 +548,6 @@ You dummy!
               headers: headers,
               params: { model: model_id, temperature, max_tokens, top_p },
               messages: contextMessages,
-            });
-
-            set((state) => {
-              const currentMessages = [...state.character.messages];
-              const targetMessage = { ...currentMessages[lastMessageIndex] };
-              if (!targetMessage.candidates) {
-                targetMessage.candidates = [targetMessage.content];
-              }
-              targetMessage.candidates.push(text);
-              targetMessage.currentIndex = targetMessage.candidates.length - 1;
-              targetMessage.content = text;
-              currentMessages[lastMessageIndex] = targetMessage;
-
-              return {
-                character: {
-                  ...state.character,
-                  messages: currentMessages,
-                },
-              };
             });
             return;
           }

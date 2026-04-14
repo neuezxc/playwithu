@@ -166,7 +166,7 @@ export default function SuperInput() {
           throw new Error(`${errorMessage} (${response.status})`);
         }
 
-        // If streaming is not supported (e.g., proxy), fall back to JSON response
+        // If streaming is not supported (e.g., proxy), simulate typewriter effect
         if (!response.body) {
           const data = await response.json().catch(() => ({}));
           if (!data.choices || data.choices.length === 0) {
@@ -174,6 +174,40 @@ export default function SuperInput() {
           }
           const text = data.choices[0].message.content;
 
+          // Add placeholder assistant message
+          setCharacter({
+            ...useCharacterStore.getState().character,
+            messages: [...messagesWithPrompt, { role: "assistant", content: "" }],
+          });
+
+          // Simulate streaming with setInterval
+          let revealedIndex = 0;
+          const charsPerTick = 5;
+          const intervalMs = 60;
+
+          const streamInterval = setInterval(() => {
+            revealedIndex += charsPerTick;
+            if (revealedIndex >= text.length) {
+              revealedIndex = text.length;
+              clearInterval(streamInterval);
+              abortControllerRef.current = null;
+              setLoading(false);
+            }
+            const revealedText = text.slice(0, revealedIndex);
+            setCharacter({
+              ...useCharacterStore.getState().character,
+              messages: [...messagesWithPrompt, { role: "assistant", content: revealedText }],
+            });
+          }, intervalMs);
+
+          // Store abort reference so handleStop can clear the interval
+          abortControllerRef.current = { abort: () => {
+            clearInterval(streamInterval);
+            abortControllerRef.current = null;
+            setLoading(false);
+          }};
+
+          // Log the final response
           addLog({
             characterName: character.name,
             promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
@@ -184,11 +218,6 @@ export default function SuperInput() {
             headers: headers,
             params: { model: model_id, temperature, max_tokens, top_p },
             messages: messagesWithPrompt,
-          });
-
-          setCharacter({
-            ...character,
-            messages: [...messagesWithPrompt, { role: "assistant", content: text }],
           });
           return;
         }

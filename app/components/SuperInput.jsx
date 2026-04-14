@@ -165,13 +165,18 @@ export default function SuperInput() {
           throw new Error(`${errorMessage} (${response.status})`);
         }
 
+        if (!response.body) {
+          throw new Error("No response body");
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulatedText = "";
 
         // Add placeholder assistant message so the UI shows the bubble
+        const currentCharacter = useCharacterStore.getState().character;
         setCharacter({
-          ...character,
+          ...currentCharacter,
           messages: [...messagesWithPrompt, { role: "assistant", content: "" }],
         });
 
@@ -185,15 +190,19 @@ export default function SuperInput() {
           for (const line of lines) {
             if (!line.startsWith("data:")) continue;
             const data = line.slice(5).trim();
-            if (data === "[DONE]") break;
+            if (data === "[DONE]") {
+              // Exit both loops
+              break;
+            }
 
             try {
               const parsed = JSON.parse(data);
               const content = parsed.choices?.[0]?.delta?.content || "";
               if (content) {
                 accumulatedText += content;
+                const latestCharacter = useCharacterStore.getState().character;
                 setCharacter({
-                  ...character,
+                  ...latestCharacter,
                   messages: [...messagesWithPrompt, { role: "assistant", content: accumulatedText }],
                 });
               }

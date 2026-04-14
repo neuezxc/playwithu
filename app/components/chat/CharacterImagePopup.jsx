@@ -10,6 +10,9 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     const resizeStartPos = useRef({ x: 0, y: 0 });
     const initialImgSize = useRef({ width: 0, height: 0 });
     const aspectRatio = useRef(null);
+    const dragStartTimeout = useRef(null);
+    const pendingDragStart = useRef({ x: 0, y: 0 });
+    const [isPressing, setIsPressing] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [animationReady, setAnimationReady] = useState(false);
 
@@ -123,6 +126,7 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
         };
 
         const handleEnd = () => {
+            cancelDragDelay();
             setIsDragging(false);
             setIsResizing(false);
         };
@@ -139,40 +143,55 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
             window.removeEventListener('mouseup', handleEnd);
             window.removeEventListener('touchmove', handleTouchMove);
             window.removeEventListener('touchend', handleEnd);
+            cancelDragDelay();
         };
     }, [isDragging, isResizing]);
 
-    const handleStart = (clientX, clientY, type) => {
-        if (type === 'drag') {
+    const startDragDelay = (clientX, clientY) => {
+        pendingDragStart.current = { x: clientX, y: clientY };
+        setIsPressing(true);
+
+        dragStartTimeout.current = setTimeout(() => {
+            setIsPressing(false);
             setIsDragging(true);
             dragStartPos.current = { x: clientX, y: clientY };
-        } else if (type === 'resize') {
-            setIsResizing(true);
-            resizeStartPos.current = { x: clientX, y: clientY };
-            initialImgSize.current = { ...imgSize };
+            dragStartTimeout.current = null;
+        }, 200);
+    };
+
+    const cancelDragDelay = () => {
+        if (dragStartTimeout.current) {
+            clearTimeout(dragStartTimeout.current);
+            dragStartTimeout.current = null;
         }
+        setIsPressing(false);
+        setIsDragging(false);
     };
 
     const handleMouseDown = (e) => {
         if (e.target.closest('.resize-handle') || e.target.closest('.close-button')) return;
-        handleStart(e.clientX, e.clientY, 'drag');
+        startDragDelay(e.clientX, e.clientY);
     };
 
     const handleTouchStart = (e) => {
         if (e.target.closest('.resize-handle') || e.target.closest('.close-button')) return;
         const touch = e.touches[0];
-        handleStart(touch.clientX, touch.clientY, 'drag');
+        startDragDelay(touch.clientX, touch.clientY);
     };
 
     const handleResizeMouseDown = (e) => {
         e.stopPropagation();
-        handleStart(e.clientX, e.clientY, 'resize');
+        setIsResizing(true);
+        resizeStartPos.current = { x: e.clientX, y: e.clientY };
+        initialImgSize.current = { ...imgSize };
     };
 
     const handleResizeTouchStart = (e) => {
         e.stopPropagation();
         const touch = e.touches[0];
-        handleStart(touch.clientX, touch.clientY, 'resize');
+        setIsResizing(true);
+        resizeStartPos.current = { x: touch.clientX, y: touch.clientY };
+        initialImgSize.current = { ...imgSize };
     };
 
     const handleWheel = (e) => {
@@ -217,9 +236,10 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                     top: position.y,
                     width: imgSize.width,
                     height: imgSize.height + 32,
-                    cursor: isDragging ? 'grabbing' : 'auto',
+                    cursor: isPressing ? 'grab' : isDragging ? 'grabbing' : 'auto',
                     backgroundColor: 'transparent',
                     animation: isAnimating ? 'balloon-pop 600ms linear forwards' : 'none',
+                    transform: isPressing ? 'scale(0.95, 0.95)' : undefined,
                 }}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}

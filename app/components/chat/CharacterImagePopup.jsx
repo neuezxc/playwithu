@@ -14,6 +14,10 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
     const [isPressing, setIsPressing] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [animationReady, setAnimationReady] = useState(false);
+    const [jellyScale, setJellyScale] = useState({ x: 1, y: 1 });
+    const lastFramePos = useRef({ x: 0, y: 0 });
+    const lastFrameTime = useRef(0);
+    const velocityWindow = useRef([]);
 
     useEffect(() => {
         if (isOpen) {
@@ -93,6 +97,31 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
         setAnimationReady(true);
     };
 
+    const updateJellyScale = (clientX, clientY) => {
+        const now = performance.now();
+        const dt = now - lastFrameTime.current;
+
+        if (dt === 0) return;
+
+        const dx = clientX - lastFramePos.current.x;
+        const dy = clientY - lastFramePos.current.y;
+        const velocity = Math.sqrt(dx * dx + dy * dy) / dt * 16;
+
+        velocityWindow.current.push(velocity);
+        if (velocityWindow.current.length > 3) {
+            velocityWindow.current.shift();
+        }
+        const avgVelocity = velocityWindow.current.reduce((a, b) => a + b, 0) / velocityWindow.current.length;
+
+        const squash = 1 - Math.min(avgVelocity * 0.02, 0.15);
+        const stretch = 1 / squash;
+
+        setJellyScale({ x: squash, y: stretch });
+
+        lastFramePos.current = { x: clientX, y: clientY };
+        lastFrameTime.current = now;
+    };
+
     useEffect(() => {
         const handleMove = (clientX, clientY) => {
             if (isDragging) {
@@ -103,6 +132,7 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                     y: prev.y + dy
                 }));
                 dragStartPos.current = { x: clientX, y: clientY };
+                updateJellyScale(clientX, clientY);
             } else if (isResizing) {
                 const dy = clientY - resizeStartPos.current.y;
                 // Scale based on height change, maintain aspect ratio
@@ -128,6 +158,8 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
             cancelDragDelay();
             setIsDragging(false);
             setIsResizing(false);
+            setJellyScale({ x: 1, y: 1 });
+            velocityWindow.current = [];
         };
 
         if (isDragging || isResizing) {
@@ -237,7 +269,11 @@ const CharacterImagePopup = ({ isOpen, onClose, imageSrc, characterName }) => {
                     cursor: isPressing ? 'grab' : isDragging ? 'grabbing' : 'auto',
                     backgroundColor: 'transparent',
                     animation: isAnimating ? 'balloon-pop 600ms linear forwards' : 'none',
-                    transform: isPressing ? 'scale(0.95, 0.95)' : undefined,
+                    transform: isPressing
+                        ? 'scale(0.95, 0.95)'
+                        : isDragging
+                            ? `scale(${jellyScale.x}, ${jellyScale.y})`
+                            : undefined,
                 }}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}

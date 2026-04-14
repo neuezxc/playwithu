@@ -189,8 +189,8 @@ export default function SuperInput() {
         });
       } catch (error) {
         if (error.name === "AbortError") {
-          // User cancelled the request intentionally — skip error logging
-          throw error;
+          // User cancelled the request intentionally — not an error
+          return;
         }
 
         // Log the error
@@ -210,8 +210,11 @@ export default function SuperInput() {
         throw error;
       }
     } catch (error) {
+      if (error.name === "AbortError") {
+        // User cancelled the request intentionally — not an error
+        return;
+      }
       console.error("Error sending message:", error.message);
-      // You might want to revert the user message or show an error to the user
     } finally {
       // Reset loading state
       abortControllerRef.current = null;

@@ -265,6 +265,9 @@ You dummy!
             const decoder = new TextDecoder();
             let accumulatedText = "";
 
+            // The assistant message will be at index + 1 (after the edited user message)
+            const assistantMsgIndex = index + 1;
+
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
@@ -282,18 +285,20 @@ You dummy!
                   const content = parsed.choices?.[0]?.delta?.content || "";
                   if (content) {
                     accumulatedText += content;
-                    set((state) => ({
-                      character: {
-                        ...state.character,
-                        messages: [
-                          ...state.character.messages,
-                          {
-                            role: "assistant",
-                            content: accumulatedText,
-                          },
-                        ],
-                      },
-                    }));
+                    set((state) => {
+                      const currentMessages = [...state.character.messages];
+                      // Update or create the assistant message at the correct index
+                      currentMessages[assistantMsgIndex] = {
+                        role: "assistant",
+                        content: accumulatedText,
+                      };
+                      return {
+                        character: {
+                          ...state.character,
+                          messages: currentMessages,
+                        },
+                      };
+                    });
                   }
                 } catch {
                   // Skip invalid JSON

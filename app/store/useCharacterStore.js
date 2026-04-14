@@ -234,6 +234,7 @@ You dummy!
               messages: currentMessages,
               temperature: temperature,
               top_p: top_p,
+              stream: true,
             };
 
             if (max_tokens > 0) body.max_tokens = max_tokens;
@@ -250,17 +251,55 @@ You dummy!
               }
             );
 
-            const data = await response.json().catch(() => ({}));
-
             if (!response.ok) {
-              const errorMessage = data.error?.message || response.statusText || "API request failed";
+              const errorData = await response.json().catch(() => ({}));
+              const errorMessage = errorData.error?.message || response.statusText || "API request failed";
               throw new Error(`${errorMessage} (${response.status})`);
             }
-            if (!data.choices || data.choices.length === 0) {
-              throw new Error("No choices returned from API");
+
+            if (!response.body) {
+              throw new Error("No response body");
             }
 
-            const text = data.choices[0].message.content;
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = "";
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split("\n");
+
+              for (const line of lines) {
+                if (!line.startsWith("data:")) continue;
+                const data = line.slice(5).trim();
+                if (data === "[DONE]") break;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content || "";
+                  if (content) {
+                    accumulatedText += content;
+                    set((state) => ({
+                      character: {
+                        ...state.character,
+                        messages: [
+                          ...state.character.messages,
+                          {
+                            role: "assistant",
+                            content: accumulatedText,
+                          },
+                        ],
+                      },
+                    }));
+                  }
+                } catch {
+                  // Skip invalid JSON
+                }
+              }
+            }
 
             // Log the response
             addLog({
@@ -268,26 +307,12 @@ You dummy!
               promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
               resolvedSystemPrompt: systemMsg?.content || "",
               lastUserMessage: lastUserMsg?.content || "",
-              lastAiResponse: text,
+              lastAiResponse: accumulatedText,
               url: fetchUrl,
               headers: headers,
               params: { model: model_id, temperature, max_tokens, top_p },
               messages: currentMessages,
             });
-
-            // Add the character's new response
-            set((state) => ({
-              character: {
-                ...state.character,
-                messages: [
-                  ...state.character.messages,
-                  {
-                    role: "assistant",
-                    content: text,
-                  },
-                ],
-              },
-            }));
           } catch (error) {
             // Log the error
             addLog({
@@ -370,6 +395,7 @@ You dummy!
             messages: contextMessages,
             temperature: temperature,
             top_p: top_p,
+            stream: true,
           };
 
           if (max_tokens > 0) body.max_tokens = max_tokens;
@@ -385,53 +411,78 @@ You dummy!
             }
           );
 
-          const data = await response.json().catch(() => ({}));
-
           if (!response.ok) {
-            const errorMessage = data.error?.message || response.statusText || "API request failed";
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error?.message || response.statusText || "API request failed";
             throw new Error(`${errorMessage} (${response.status})`);
           }
-          if (!data.choices || data.choices.length === 0) {
-            throw new Error("No choices returned from API");
+
+          if (!response.body) {
+            throw new Error("No response body");
           }
 
-          const newContent = data.choices[0].message.content;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let accumulatedText = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+
+            for (const line of lines) {
+              if (!line.startsWith("data:")) continue;
+              const data = line.slice(5).trim();
+              if (data === "[DONE]") break;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || "";
+                if (content) {
+                  accumulatedText += content;
+                  set((state) => {
+                    const currentMessages = [...state.character.messages];
+                    const targetMessage = { ...currentMessages[lastMessageIndex] };
+
+                    if (!targetMessage.candidates) {
+                      targetMessage.candidates = [targetMessage.content];
+                    }
+
+                    if (targetMessage.candidates.length <= 1) {
+                      targetMessage.candidates.push(accumulatedText);
+                    } else {
+                      targetMessage.candidates[targetMessage.candidates.length - 1] = accumulatedText;
+                    }
+                    targetMessage.currentIndex = targetMessage.candidates.length - 1;
+                    targetMessage.content = accumulatedText;
+                    currentMessages[lastMessageIndex] = targetMessage;
+
+                    return {
+                      character: {
+                        ...state.character,
+                        messages: currentMessages,
+                      },
+                    };
+                  });
+                }
+              } catch {
+                // Skip invalid JSON
+              }
+            }
+          }
 
           addLog({
             characterName: get().character.name,
             promptName: usePromptStore.getState().getActivePrompt()?.name || "Unknown",
             resolvedSystemPrompt: systemMsg?.content || "",
             lastUserMessage: lastUserMsg?.content || "",
-            lastAiResponse: newContent,
+            lastAiResponse: accumulatedText,
             url: fetchUrl,
             headers: headers,
             params: { model: model_id, temperature, max_tokens, top_p },
             messages: contextMessages,
-          });
-
-          // Update the message with new candidate
-          set((state) => {
-            const currentMessages = [...state.character.messages];
-            const targetMessage = { ...currentMessages[lastMessageIndex] };
-
-            // Initialize candidates if not present
-            if (!targetMessage.candidates) {
-              targetMessage.candidates = [targetMessage.content];
-            }
-
-            // Add new candidate
-            targetMessage.candidates.push(newContent);
-            targetMessage.currentIndex = targetMessage.candidates.length - 1;
-            targetMessage.content = newContent;
-
-            currentMessages[lastMessageIndex] = targetMessage;
-
-            return {
-              character: {
-                ...state.character,
-                messages: currentMessages,
-              },
-            };
           });
 
         } catch (error) {

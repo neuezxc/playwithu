@@ -16,6 +16,7 @@ import DebugModal from "./modal/DebugModal";
 import LorebookModal from "./modal/LorebookModal";
 import InputMenu from "./InputMenu";
 import PersonaModal from "./modal/PersonaModal";
+import PlaceholderStatusPanel from "./PlaceholderStatusPanel";
 import { useRouter } from "next/navigation";
 import useLorebookStore from "../store/useLorebookStore";
 
@@ -38,6 +39,7 @@ export default function SuperInput() {
   const setPatternReplacementModal = useCharacterStore((state) => state.setPatternReplacementModal);
   const isLorebookModalOpen = useLorebookStore((state) => state.modal);
   const setLorebookModal = useLorebookStore((state) => state.setModal);
+  const togglePlaceholderPanel = useDebugStore((state) => state.togglePlaceholderPanel);
   const isLoading = useCharacterStore((state) => state.isLoading);
   const abortControllerRef = useRef(null);
   const router = useRouter();
@@ -328,6 +330,7 @@ export default function SuperInput() {
 
   return (
     <footer className="flex flex-col items-center w-full lg:p-4">
+      <PlaceholderStatusPanel />
       <div className="w-full max-w-xl bg-[#212121]/80 border border-[#282828] lg:rounded-2xl rounded-t-2xl p-4 flex flex-col gap-3">
         <textarea
           className="w-full bg-transparent text-[#CDCDCD] text-base placeholder:text-[#A2A2A2] resize-none outline-none h-[40px] lg:h-[auto]"
@@ -343,6 +346,7 @@ export default function SuperInput() {
               setIsCustomPromptOpen={setIsCustomPromptOpen}
               setIsDebugModalOpen={setIsDebugModalOpen}
               setIsPersonaModalOpen={setIsPersonaModalOpen}
+              onTogglePlaceholderPanel={togglePlaceholderPanel}
             />
             {user?.avatarURL ? (
               <button

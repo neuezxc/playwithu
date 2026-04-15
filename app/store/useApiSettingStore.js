@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'  // ← Add this
 const useApiSettingStore = create(
   persist(  // ← Wrap with persist
     (set) => ({
+      api_endpoint: "https://openrouter.ai/api/v1/chat/completions",
       api_key: "",
       model_id: "openrouter/sonoma-dusk-alpha",
       modal: false,
@@ -14,8 +15,9 @@ const useApiSettingStore = create(
       frequency_penalty: 0,
       presence_penalty: 0,
 
-      setApiKey: (key) => set({ api_key: key }),
-      setModelId: (id) => set({ model_id: id }),
+      setApiEndpoint: (endpoint) => set({ api_endpoint: endpoint.trim() }),
+      setApiKey: (key) => set({ api_key: key.trim() }),
+      setModelId: (id) => set({ model_id: id.trim() }),
       setModal: (modal) => set({ modal: modal }),
       // Parameter setters
       setTemperature: (temperature) => set({ temperature }),

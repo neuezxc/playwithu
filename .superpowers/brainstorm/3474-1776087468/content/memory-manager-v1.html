@@ -1,0 +1,114 @@
+<style>
+/* Add a little bit of inline CSS specifically for the mockup since we want it to look premium and glassmorphic */
+.glass-panel {
+  background: rgba(18, 18, 18, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  color: #f2f2f2;
+}
+.sidebar {
+  width: 150px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding-right: 1rem;
+}
+.main-content {
+  flex: 1;
+  padding-left: 1.5rem;
+  overflow-y: auto;
+}
+.mem-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+.mem-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.mem-tag {
+  background: rgba(58, 158, 73, 0.1);
+  color: #3A9E49;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.mem-actions span {
+  color: #8e8e8e;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+.mem-actions span:hover {
+  color: #f2f2f2;
+}
+</style>
+
+<h2>Memory Manager UI Ideas</h2>
+<p class="subtitle">Comparing the structured approach to the standard text approach.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content" style="width: 100%;">
+      <h3>Granular Cards (Recommended)</h3>
+      <p style="margin-bottom: 1rem;">Memory parsed into JSON and displayed as editable, rearrangeable cards.</p>
+      
+      <div class="glass-panel" style="display: flex; height: 280px; text-align: left;">
+        <div class="sidebar">
+          <div style="color: #3A9E49; font-weight: bold; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.5rem; background: rgba(58,158,73,0.1); border-radius: 0.5rem;">NPCs</div>
+          <div style="color: #8e8e8e; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.5rem;">Locations</div>
+          <div style="color: #8e8e8e; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.5rem;">Timeline</div>
+          <div style="color: #8e8e8e; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.5rem;">Relationships</div>
+        </div>
+        <div class="main-content scrollbar-hide">
+          <div class="mem-card">
+            <div class="mem-card-header">
+              <span class="mem-tag" style="border: 1px solid rgba(58, 158, 73, 0.2);">Character</span>
+              <div class="mem-actions"><span>Edit</span> <span>Delete</span></div>
+            </div>
+            <strong style="display: block; margin-bottom: 0.2rem; font-size: 0.9rem;">Elaria Dawn</strong>
+            <span style="font-size: 0.8rem; color: #a1a1a1; line-height: 1.4;">Main companion, personality: witty but cautious. Current status: Injured.</span>
+          </div>
+          <div class="mem-card">
+            <div class="mem-card-header">
+              <span class="mem-tag" style="border: 1px solid rgba(58, 158, 73, 0.2);">Character</span>
+              <div class="mem-actions"><span>Edit</span> <span>Delete</span></div>
+            </div>
+            <strong style="display: block; margin-bottom: 0.2rem; font-size: 0.9rem;">Garrick</strong>
+            <span style="font-size: 0.8rem; color: #a1a1a1; line-height: 1.4;">Merchant from the lower wards. Greedy, currently owes user a favor.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content" style="width: 100%;">
+      <h3>Classic Text Block</h3>
+      <p style="margin-bottom: 1rem;">A single text-area containing a raw markdown block, similar to now but restyled.</p>
+      
+      <div class="glass-panel" style="height: 280px; display: flex; flex-direction: column; text-align: left;">
+        <div style="margin-bottom: 0.5rem; color: #8e8e8e; font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">Memory Content</div>
+        <textarea style="flex: 1; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.5rem; color: #a1a1a1; padding: 1rem; resize: none; font-family: monospace; font-size: 0.8rem;" readonly>
+CHAT MEMORY BLOCK
+
+Genre/Focus: Adventure
+World State
+NPCs:
+Elaria: Main companion, witty but cautious.
+Garrick: Merchant, greedy.
+...
+        </textarea>
+      </div>
+    </div>
+  </div>
+</div>

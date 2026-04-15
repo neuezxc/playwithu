@@ -160,6 +160,31 @@ function LogCard({ log, isExpanded, onToggle }) {
               )}
             </Section>
           )}
+          
+          {/* Request URL */}
+          {log.url && (
+            <Section title="Request URL">
+              <div className="text-xs text-[#d9d9d9] font-mono break-all">
+                {log.url}
+              </div>
+            </Section>
+          )}
+
+          {/* headers */}
+          {log.headers && Object.keys(log.headers).length > 0 && (
+            <Section title="Headers">
+              <div className="text-xs text-[#d9d9d9] font-mono space-y-0.5">
+                {Object.entries(log.headers).map(([key, value]) => (
+                  <div key={key}>
+                    <span className="text-[#8e8e8e]">{key}:</span>{" "}
+                    {key.toLowerCase() === "authorization" 
+                      ? `${value.substring(0, 10)}${"*".repeat(15)}` 
+                      : value}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* Params */}
           {log.params && log.params.model && (

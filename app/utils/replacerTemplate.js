@@ -131,3 +131,20 @@ export function buildPlaceholderValues(messages) {
     lorebook: lorebookContent
   }
 }
+
+/**
+ * Check if a resolved template still contains unresolved {{...}} placeholders.
+ * Returns { valid: true } if all resolved, or { valid: false, unresolved: [...] }
+ *
+ * @param {string} resolvedText - The template after placeholder replacement
+ * @returns {{ valid: boolean, unresolved?: string[] }}
+ */
+export function validatePlaceholders(resolvedText) {
+  if (!resolvedText) return { valid: true }
+  const unresolved = resolvedText.match(/{{\w+}}/g)
+  if (unresolved && unresolved.length > 0) {
+    console.warn('[Placeholder Validation] Unresolved placeholders:', unresolved)
+    return { valid: false, unresolved }
+  }
+  return { valid: true }
+}

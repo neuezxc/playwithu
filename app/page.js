@@ -34,7 +34,7 @@ export default function Home() {
 
   useEffect(() => {
     setMessageCount(character.messages.length);
-  }, [character.messages]);
+  }, [character.messages, setMessageCount]);
 
   // Auto-summarize trigger
   useEffect(() => {

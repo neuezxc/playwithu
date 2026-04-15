@@ -18,6 +18,19 @@ export const PROMPT_VARIABLES = [
 export const promptVariables = PROMPT_VARIABLES
 
 export function replacePlaceholders(template, values) {
+  // Pre-resolve identity placeholders inside descriptions
+  const baseValues = { char: values.char || '', user: values.user || '' }
+  const nestedFields = ['char_description', 'user_description', 'scenario']
+  
+  nestedFields.forEach(field => {
+    if (values[field]) {
+      values[field] = values[field]
+        .replaceAll('{{char}}', baseValues.char)
+        .replaceAll('{{user}}', baseValues.user)
+    }
+  })
+
+  // Normal replacement sequence
   let result = template
   for (const [key, value] of Object.entries(values)) {
     result = result.replaceAll(`{{${key}}}`, value || '')

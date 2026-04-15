@@ -838,24 +838,15 @@ You dummy!
           )
           if (selectedCharacter) {
             const promptContent = usePromptStore.getState().getActivePromptContent()
-            const { user } = useUserStore.getState()
-            const { summarizeText } = useMemoryStore.getState()
 
-            // Build values with the selected character's data (not the current one)
-            const values = {
-              char: selectedCharacter?.name || '',
-              user: user?.name || '',
-              char_description: selectedCharacter?.description || '',
-              user_description: user?.description || '',
-              scenario: selectedCharacter?.scenario || '',
-              memory: summarizeText || '',
-              lorebook: '',
-              tools: state.patternReplacements
-                .filter(p => p.active && p.prompt)
-                .map(p => p.prompt)
-                .join('\n')
-            }
-
+            // Use buildPlaceholderValues for consistent placeholder resolution
+            // Temporarily set character to selectedCharacter so buildPlaceholderValues picks it up
+            const previousCharacter = state.character
+            const values = buildPlaceholderValues()
+            // Override char-related values with selectedCharacter data
+            values.char = selectedCharacter?.name || ''
+            values.char_description = selectedCharacter?.description || ''
+            values.scenario = selectedCharacter?.scenario || ''
             const processedPrompt = replacePlaceholders(promptContent, values)
             const processedFirstMessage = replacePlaceholders(
               selectedCharacter.firstMessage,

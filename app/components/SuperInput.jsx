@@ -8,7 +8,7 @@ import useUserStore from "../store/useUserStore";
 import useMemoryStore from "../store/useMemoryStore";
 import usePromptStore from "../store/usePromptStore";
 import useDebugStore from "../store/useDebugStore";
-import { replacePlaceholders, buildPlaceholderValues, PROMPT_VARIABLES } from "../utils/replacerTemplate"
+import { replacePlaceholders, buildPlaceholderValues, PROMPT_VARIABLES, validatePlaceholders } from "../utils/replacerTemplate"
 import CharacterModal from "./modal/CharacterModal";
 import CustomPromptModal from "./modal/CustomPromptModal";
 import PatternReplacementModal from "./modal/PatternReplacementModal";
@@ -125,6 +125,12 @@ export default function SuperInput() {
       // Update the system prompt in the character store
       const { updateSystemPrompt } = useCharacterStore.getState();
       updateSystemPrompt(processedPrompt);
+
+      // Validate all placeholders were resolved before sending to API
+      const validation = validatePlaceholders(processedPrompt);
+      if (!validation.valid) {
+        console.warn('[API Call] Unresolved placeholders in system prompt:', validation.unresolved);
+      }
 
       // Update the first message in updatedMessage to ensure it has the latest processed prompt
       // The first message should be the system prompt
